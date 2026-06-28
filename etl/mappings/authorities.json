@@ -1,0 +1,25 @@
+{
+  "_meta": {
+    "description": "Authoritative counselling bodies and the public landing pages that publish allotment result PDFs/XLS. URLs must point to PUBLIC pages — never to candidate login areas."
+  },
+  "authorities": [
+    {
+      "code": "MCC",
+      "name": "Medical Counselling Committee (DGHS)",
+      "scope": "AIQ 15%, Deemed, Central institutions, AIIMS, JIPMER, ESIC, AFMC, BHU, AMU, DU, Jamia",
+      "url_current": "https://mcc.nic.in/UGCounselling/",
+      "url_archive": "https://mcc.nic.in/Archive/UG",
+      "url_events":  "https://mcc.nic.in/UGCounselling/CurrentEvents"
+    },
+    { "code": "KEA",        "name": "Karnataka Examinations Authority",                       "scope": "KA state quota",     "url_current": "https://cetonline.karnataka.gov.in/kea/" },
+    { "code": "NTRUHS",     "name": "Dr. NTR University of Health Sciences",                  "scope": "AP state quota",     "url_current": "https://drntruhs.ap.nic.in/" },
+    { "code": "KNRUHS",     "name": "Kaloji Narayana Rao University of Health Sciences",      "scope": "TG state quota",     "url_current": "https://knruhs.telangana.gov.in/" },
+    { "code": "TNMCC",      "name": "Tamil Nadu Medical Counselling Committee (DME-TN)",      "scope": "TN state quota",     "url_current": "https://tnmedicalselection.net/" },
+    { "code": "MH-CET",     "name": "Maharashtra State Common Entrance Test Cell",            "scope": "MH state quota",     "url_current": "https://cetcell.mahacet.org/" },
+    { "code": "CEE-KL",     "name": "Commissioner for Entrance Examinations, Kerala",         "scope": "KL state quota",     "url_current": "https://cee.kerala.gov.in/" },
+    { "code": "UPDGME",     "name": "Directorate General of Medical Education, UP",           "scope": "UP state quota",     "url_current": "https://upneet.gov.in/" },
+    { "code": "WBMCC",      "name": "West Bengal Medical Counselling Committee",              "scope": "WB state quota",     "url_current": "https://wbmcc.nic.in/" },
+    { "code": "MCC-RJ",     "name": "Rajasthan Medical Education NEET UG Counselling Board",  "scope": "RJ state quota",     "url_current": "https://rajneetug2024.in/" },
+    { "code": "MCC-GJ",     "name": "Admission Committee for Professional Courses Gujarat",   "scope": "GJ state quota",     "url_current": "https://medadmgujarat.org/" }
+  ]
+}

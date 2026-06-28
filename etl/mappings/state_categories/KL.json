@@ -1,0 +1,6 @@
+{
+  "state": ["KL"],
+  "authority": ["CEE-Kerala"],
+  "categories": ["SM", "EZ", "MU", "BH", "LA", "DV", "VK", "KN", "KU", "SC", "ST"],
+  "extra_quotas": ["NRI", "MANAGEMENT", "MINORITY", "GOVT"]
+}

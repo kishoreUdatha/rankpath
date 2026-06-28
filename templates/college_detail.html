@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ college.name }} - RankPath{% endblock %}
+{% block content %}
+<h1>{{ college.name }}</h1>
+<p class="muted">{{ college.state }} - {{ college.type }}</p>
+
+<h2>Historical cutoffs (MCC AIQ Round 1)</h2>
+<table>
+  <thead>
+    <tr><th>Year</th><th>Course</th><th>Category</th><th>Closing rank</th><th>Source</th></tr>
+  </thead>
+  <tbody>
+    {% for c in cutoffs %}
+    <tr>
+      <td>{{ c.year }}</td>
+      <td>{{ c.course }}</td>
+      <td>{{ c.category }}</td>
+      <td>{{ "{:,}".format(c.closing_rank) }}</td>
+      <td class="muted">{{ c.source_pdf_file or 'seed' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

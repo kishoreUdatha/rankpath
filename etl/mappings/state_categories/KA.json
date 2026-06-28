@@ -1,0 +1,7 @@
+{
+  "state": ["KA"],
+  "authority": ["KEA"],
+  "categories": ["GM", "1G", "2A", "2B", "3A", "3B", "SC", "ST"],
+  "regional_quotas": ["HK", "KK"],
+  "extra_quotas": ["NRI", "MANAGEMENT", "MINORITY", "GOVT"]
+}

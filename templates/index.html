@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}RankPath - Predict your MCC AIQ chances{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Where can your NEET rank take you?</h1>
+  <p class="lede">MCC AIQ MBBS Round 1 cutoff analytics. {{ n_colleges }} colleges, {{ n_cutoffs }} historical cutoffs across years {{ years|join(', ') }}.</p>
+</section>
+
+<form class="predict-form" method="post" action="/predict">
+  <div class="row">
+    <label>
+      <span>Your NEET rank</span>
+      <input type="number" name="rank" min="1" max="2000000" required placeholder="e.g. 12500">
+    </label>
+    <label>
+      <span>Category</span>
+      <select name="category" required>
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Show top</span>
+      <input type="number" name="limit" min="10" max="500" value="50">
+    </label>
+  </div>
+  <button type="submit">Predict</button>
+</form>
+
+<section class="note">
+  <h3>How RankPath scores a college</h3>
+  <ol>
+    <li>Looks up the last 3 years of MCC AIQ Round 1 closing ranks for that course and your category.</li>
+    <li>Computes a weighted closing rank: 50% latest year, 30% prior, 20% prior-prior.</li>
+    <li>Compares your rank to that weighted number and assigns a bucket: Safe, High, Borderline, Low, Unlikely.</li>
+    <li>Every prediction shows the three historical numbers that drove the bucket. No black box.</li>
+  </ol>
+</section>
+{% endblock %}

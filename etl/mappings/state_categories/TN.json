@@ -1,0 +1,6 @@
+{
+  "state": ["TN"],
+  "authority": ["TNMCC", "DME-TN"],
+  "categories": ["OC", "BC", "BCM", "MBC", "DNC", "SC", "SCA", "ST"],
+  "extra_quotas": ["MINORITY", "MANAGEMENT", "NRI", "GOVT", "SPORTS"]
+}

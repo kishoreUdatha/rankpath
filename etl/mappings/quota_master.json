@@ -1,0 +1,42 @@
+{
+  "_meta": {
+    "description": "Quota normalization across MCC + state portals. Match is case-insensitive regex on the raw quota string.",
+    "version": 1
+  },
+  "rules": [
+    { "match": "^aiq$|all india quota|^all india$",              "normalized": "AIQ" },
+    { "match": "^open seat quota$",                                "normalized": "AIQ" },
+    { "match": "deemed[/ ]?paid seats? quota|deemed[/ ]?paid",     "normalized": "DEEMED" },
+    { "match": "ip university quota",                              "normalized": "DU" },
+    { "match": "delhi university quota|^du quota$",                "normalized": "DU" },
+    { "match": "delhi ncr|^cw quota$|children/widows",             "normalized": "CW" },
+    { "match": "aligarh muslim university.*quota|^amu quota$",     "normalized": "AMU" },
+    { "match": "jamia.*quota",                                     "normalized": "JAMIA" },
+    { "match": "non[- ]?resident indian.*amu",                     "normalized": "NRI" },
+    { "match": "non[- ]?resident indian$|^nri$",                   "normalized": "NRI" },
+    { "match": "foreign country quota",                            "normalized": "NRI" },
+    { "match": "employees state insurance|esi[c]?[- ]?",           "normalized": "ESIC_IP" },
+    { "match": "muslim minority quota|muslim women quota|muslim obc|jain minority|muslim quota|muslim st", "normalized": "MINORITY" },
+    { "match": "b\\.?sc nursing",                                  "normalized": "BSC_NURSING" },
+    { "match": "internal[- ]?puducherry|puducherry ut domicile",   "normalized": "STATE" },
+    { "match": "^state$|^state quota$|^sq$",                     "normalized": "STATE" },
+    { "match": "^management$|^mgmt$|^mq$",                       "normalized": "MANAGEMENT" },
+    { "match": "^nri$|non[- ]?resident",                         "normalized": "NRI" },
+    { "match": "^deemed$|deemed[- ]?university",                 "normalized": "DEEMED" },
+    { "match": "central[- ]?(institute|inst)|^cic$",             "normalized": "CENTRAL" },
+    { "match": "esic|insured[- ]?person|ip[- ]?quota",           "normalized": "ESIC_IP" },
+    { "match": "^afmc$",                                          "normalized": "AFMC" },
+    { "match": "^aiims$",                                         "normalized": "AIIMS" },
+    { "match": "^jipmer$",                                        "normalized": "JIPMER" },
+    { "match": "^bhu$|banaras[- ]?hindu",                        "normalized": "BHU" },
+    { "match": "^amu$|aligarh[- ]?muslim",                       "normalized": "AMU" },
+    { "match": "^du$|delhi[- ]?university",                      "normalized": "DU" },
+    { "match": "^jamia$|jamia[- ]?millia",                       "normalized": "JAMIA" },
+    { "match": "^minority$|muslim[- ]?minority|christian[- ]?minority", "normalized": "MINORITY" },
+    { "match": "^govt$|government",                              "normalized": "GOVT" },
+    { "match": "^private$",                                       "normalized": "PRIVATE" },
+    { "match": "ncc",                                             "normalized": "NCC" },
+    { "match": "sports",                                          "normalized": "SPORTS" },
+    { "match": "cap|children[- ]?of[- ]?armed",                  "normalized": "CAP" }
+  ]
+}

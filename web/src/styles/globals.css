@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+
+body {
+  @apply bg-surface-muted text-ink-900 antialiased;
+  font-feature-settings: "cv02","cv03","cv04","cv11";
+}
+
+.card {
+  @apply bg-white border border-border rounded-lg shadow-sm;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium
+         transition-colors focus-visible:outline-none focus-visible:ring-2
+         focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50;
+}
+.btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 h-10 px-4 py-2; }
+.btn-ghost   { @apply btn hover:bg-brand-50 text-brand-700 h-10 px-4 py-2; }
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+.badge-high   { @apply badge bg-emerald-100 text-emerald-800; }
+.badge-mod    { @apply badge bg-amber-100 text-amber-800; }
+.badge-low    { @apply badge bg-rose-100 text-rose-800; }
+.badge-unlike { @apply badge bg-slate-100 text-slate-700; }

@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "description": "Master category normalization. Each key is a regex (case-insensitive) matched against the raw category string from a counselling PDF/XLS. The first matching rule wins.",
+    "version": 1
+  },
+  "rules": [
+    { "match": "^(open|ur|gn|gen|general|oc)$",                "normalized": "OPEN" },
+    { "match": "^(ews|gen[- ]?ews|ew|general[- ]?ews)$",       "normalized": "EWS" },
+    { "match": "^(obc|obc[- ]?ncl|bc|bcl)$",                   "normalized": "OBC" },
+    { "match": "^sc$",                                          "normalized": "SC" },
+    { "match": "^st$",                                          "normalized": "ST" },
+    { "match": "^(pwd|pwbd|ph|divyang|divyangjan)$",           "normalized": "PwD" },
+    { "match": "^open[- ]?pwd$",                                "normalized": "OPEN-PwD" },
+    { "match": "^ews[- ]?pwd$",                                 "normalized": "EWS-PwD" },
+    { "match": "^obc[- ]?pwd$",                                 "normalized": "OBC-PwD" },
+    { "match": "^sc[- ]?pwd$",                                  "normalized": "SC-PwD" },
+    { "match": "^st[- ]?pwd$",                                  "normalized": "ST-PwD" },
+    { "match": "^mbc$",                                         "normalized": "MBC" },
+    { "match": "^bc[- ]?a$",                                    "normalized": "BC-A" },
+    { "match": "^bc[- ]?b$",                                    "normalized": "BC-B" },
+    { "match": "^bc[- ]?c$",                                    "normalized": "BC-C" },
+    { "match": "^bc[- ]?d$",                                    "normalized": "BC-D" },
+    { "match": "^bc[- ]?e$",                                    "normalized": "BC-E" },
+    { "match": "^bcm$",                                         "normalized": "BCM" },
+    { "match": "^sca$",                                         "normalized": "SCA" },
+    { "match": "^sebc$",                                        "normalized": "SEBC" },
+    { "match": "^(nt|nt[- ]?b|nt[- ]?c|nt[- ]?d|vj|vj[- ]?a)$", "normalized": "NT" },
+
+    { "match": "^gm$",                                          "normalized": "GM" },
+    { "match": "^1g$",                                          "normalized": "1G" },
+    { "match": "^2a$",                                          "normalized": "2A" },
+    { "match": "^2b$",                                          "normalized": "2B" },
+    { "match": "^3a$",                                          "normalized": "3A" },
+    { "match": "^3b$",                                          "normalized": "3B" },
+
+    { "match": "^(sm|state[- ]?merit)$",                       "normalized": "SM" },
+    { "match": "^ez$",                                          "normalized": "EZ" },
+    { "match": "^mu$",                                          "normalized": "MU" },
+    { "match": "^bh$",                                          "normalized": "BH" },
+    { "match": "^la$",                                          "normalized": "LA" },
+    { "match": "^dv$",                                          "normalized": "DV" },
+    { "match": "^vk$",                                          "normalized": "VK" },
+    { "match": "^kn$",                                          "normalized": "KN" },
+    { "match": "^ku$",                                          "normalized": "KU" }
+  ]
+}

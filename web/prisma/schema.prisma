@@ -1,0 +1,241 @@
+// RankPath v2 — Postgres schema for NEET UG MBBS allotment analytics.
+// All raw fields are preserved on Allotment alongside the normalized columns
+// so we never lose provenance and can re-normalize as mappings evolve.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum CollegeType {
+  AIIMS
+  JIPMER
+  ESIC
+  CENTRAL
+  GOVT
+  PRIVATE
+  DEEMED
+  UNKNOWN
+}
+
+enum FeeBand {
+  LOW         // < ~5 L/year
+  MID         // 5–15 L/year
+  HIGH        // 15–25 L/year (most deemed)
+  VERY_HIGH   // > 25 L/year (NRI seats)
+  UNKNOWN
+}
+
+enum Gender {
+  M
+  F
+  O
+}
+
+enum RecordStatus {
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+// ---------- Reference tables ----------
+
+model CounsellingAuthority {
+  id           String   @id @default(cuid())
+  code         String   @unique             // MCC, KEA, NTRUHS, TNMCC, ...
+  name         String
+  scope        String?                       // human-readable scope
+  urlCurrent   String?
+  urlArchive   String?
+  state        State?   @relation(fields: [stateId], references: [id])
+  stateId      String?
+  allotments   Allotment[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model State {
+  id                  String   @id @default(cuid())
+  code                String   @unique       // AP, KA, TN, ...
+  name                String
+  colleges            College[]
+  authorities         CounsellingAuthority[]
+}
+
+model College {
+  id           String   @id @default(cuid())
+  name         String
+  code         String?
+  type         CollegeType @default(UNKNOWN)
+  city         String?
+  state        State?   @relation(fields: [stateId], references: [id])
+  stateId      String?
+  feeBandDefault FeeBand @default(UNKNOWN)
+  isMinority   Boolean  @default(false)
+  isDeemed     Boolean  @default(false)
+  isCentral    Boolean  @default(false)
+  allotments   Allotment[]
+  seatMatrix   SeatMatrix[]
+  cutoffs      CutoffSummary[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([name, stateId])
+  @@index([type])
+  @@index([stateId])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  name        String   @unique               // MBBS, BDS
+  durationYrs Int      @default(5)
+  allotments  Allotment[]
+  seatMatrix  SeatMatrix[]
+  cutoffs     CutoffSummary[]
+}
+
+// ---------- Mapping tables (mirrored from /etl/mappings JSONs) ----------
+
+model CategoryMap {
+  id           String  @id @default(cuid())
+  rawCode      String  @unique
+  normalized   String                          // OPEN, EWS, OBC, SC, ST, PwD, BC-A, ...
+  state        String?                         // null = master mapping
+  note         String?
+  createdAt    DateTime @default(now())
+}
+
+model QuotaMap {
+  id          String  @id @default(cuid())
+  rawCode     String  @unique
+  normalized  String                           // AIQ, STATE, MANAGEMENT, NRI, DEEMED, ...
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+// ---------- Core fact tables ----------
+
+model Allotment {
+  id                    String   @id @default(cuid())
+  year                  Int
+  round                 String                          // R1, R2, MOPUP, STRAY
+  authority             CounsellingAuthority? @relation(fields: [authorityId], references: [id])
+  authorityId           String?
+  authorityCode         String                           // denormalized for fast filters
+  state                 String?                          // ISO state code (denormalized)
+
+  college               College? @relation(fields: [collegeId], references: [id])
+  collegeId             String?
+  course                Course?  @relation(fields: [courseId], references: [id])
+  courseId              String?
+
+  // ----- Raw fields (preserved verbatim) -----
+  rawInstituteName      String?
+  rawCourse             String?
+  rawSeatCategory       String?
+  rawCandidateCategory  String?
+  rawQuota              String?
+
+  // ----- Normalized fields -----
+  normalizedCategory    String?                          // OPEN / EWS / OBC / SC / ST / BC-A ...
+  normalizedQuota       String?                          // AIQ / STATE / MANAGEMENT / NRI / DEEMED ...
+
+  candidateRank         Int?
+  neetMarks             Int?
+  gender                Gender?
+  pwd                   Boolean?
+
+  collegeType           CollegeType @default(UNKNOWN)
+  feeBand               FeeBand     @default(UNKNOWN)
+
+  sourceUrl             String?
+  sourceFile            String?
+  lastUpdated           DateTime    @default(now())
+  rawRowHash            String      @unique
+  status                RecordStatus @default(PUBLISHED)
+
+  createdAt             DateTime @default(now())
+
+  @@index([year, round])
+  @@index([normalizedCategory])
+  @@index([normalizedQuota])
+  @@index([state])
+  @@index([collegeId, courseId, year, round])
+}
+
+model SeatMatrix {
+  id            String   @id @default(cuid())
+  year          Int
+  round         String
+  college       College  @relation(fields: [collegeId], references: [id])
+  collegeId     String
+  course        Course   @relation(fields: [courseId], references: [id])
+  courseId      String
+  quota         String
+  category      String
+  seats         Int
+  sourceFile    String?
+
+  @@unique([year, round, collegeId, courseId, quota, category])
+  @@index([year, round])
+}
+
+/// Pre-aggregated closing-rank summary so the predictor avoids scanning all Allotments.
+model CutoffSummary {
+  id              String   @id @default(cuid())
+  year            Int
+  round           String
+  college         College  @relation(fields: [collegeId], references: [id])
+  collegeId       String
+  course          Course   @relation(fields: [courseId], references: [id])
+  courseId        String
+  category        String                                 // normalized
+  quota           String                                 // normalized
+  openingRank     Int?
+  closingRank     Int
+  allotmentCount  Int
+  sourceFiles     String[]                               // provenance set
+
+  @@unique([year, round, collegeId, courseId, category, quota])
+  @@index([category, quota, year])
+  @@index([collegeId, courseId])
+}
+
+/// Audit trail for every prediction served — used to backtest accuracy.
+model PredictionLog {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  inputRank         Int
+  inputCategory     String
+  inputQuota        String
+  inputState        String?
+  inputGender       Gender?
+  inputPwd          Boolean?
+  inputCollegeType  String?
+  inputBudget       String?
+  resultCount       Int
+  topResults        Json                                 // [{collegeId, courseId, score, band}]
+  appVersion        String?
+
+  @@index([createdAt])
+}
+
+model AdminUpload {
+  id          String   @id @default(cuid())
+  filename    String
+  authority   String?
+  year        Int?
+  round       String?
+  rowsParsed  Int      @default(0)
+  rowsLoaded  Int      @default(0)
+  errors      Json?
+  status      RecordStatus @default(PENDING_REVIEW)
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+}

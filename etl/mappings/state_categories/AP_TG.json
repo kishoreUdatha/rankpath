@@ -1,0 +1,6 @@
+{
+  "state": ["AP", "TG"],
+  "authority": ["NTRUHS", "KNRUHS"],
+  "categories": ["OC", "BC-A", "BC-B", "BC-C", "BC-D", "BC-E", "SC", "ST", "EWS"],
+  "extra_quotas": ["NCC", "CAP", "SPORTS", "MINORITY", "NRI", "MANAGEMENT"]
+}

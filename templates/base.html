@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}RankPath{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><a href="/">RankPath</a></div>
+  <nav>
+    <a href="/">Predict</a>
+    <a href="/colleges">Colleges</a>
+    <a href="/backtest">Backtest</a>
+    <a href="/disclaimer">Disclaimer</a>
+  </nav>
+</header>
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">
+  <p class="muted">{{ disclaimer }}</p>
+</footer>
+</body>
+</html>

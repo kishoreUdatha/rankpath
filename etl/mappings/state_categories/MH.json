@@ -1,0 +1,6 @@
+{
+  "state": ["MH"],
+  "authority": ["MH-CET", "CET-CELL"],
+  "categories": ["OPEN", "OBC", "EWS", "SEBC", "NT", "VJ", "SC", "ST"],
+  "extra_quotas": ["MINORITY", "MANAGEMENT", "NRI", "GOVT", "PwD"]
+}

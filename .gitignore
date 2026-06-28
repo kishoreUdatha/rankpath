@@ -1,0 +1,31 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.env
+*.sqlite
+*.sqlite-journal
+*.db
+data/raw/*.pdf
+!data/raw/.gitkeep
+.pytest_cache/
+.vscode/
+.idea/
+.claude/
+
+# Next.js / Node
+node_modules/
+web/.next/
+web/out/
+web/.env
+web/.env.local
+*.log
+.DS_Store
+
+# Data (v2)
+data/raw/**/*.xlsx
+data/raw/**/*.xls
+data/raw/**/*.csv
+data/normalized/

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Predictions for rank {{ rank }} ({{ category }}){% endblock %}
+{% block content %}
+{% if error %}
+  <div class="error">{{ error }}</div>
+  <p><a href="/">Try again</a></p>
+{% else %}
+<section class="summary">
+  <h1>Rank {{ "{:,}".format(rank) }} - {{ category }}</h1>
+  <p>{{ total }} colleges have historical data for this category. Grouped by likelihood below.</p>
+</section>
+
+{% for bucket in bucket_order %}
+  {% set items = groups[bucket] %}
+  {% if items %}
+  <section class="bucket bucket-{{ bucket|lower }}">
+    <h2>{{ bucket }} <span class="count">({{ items|length }})</span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>College</th>
+          <th>State</th>
+          <th>Type</th>
+          <th>Confidence</th>
+          <th>Weighted closing rank</th>
+          <th>History</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in items %}
+        <tr>
+          <td><a href="/college/{{ p.college_id }}">{{ p.college_name }}</a></td>
+          <td>{{ p.state }}</td>
+          <td>{{ p.college_type }}</td>
+          <td>{{ "%.0f"|format(p.confidence * 100) }}%</td>
+          <td>{{ "{:,.0f}".format(p.weighted_closing_rank) }}</td>
+          <td class="history">
+            {% for h in p.history %}
+              <span class="hist-pill">{{ h.year }}: {{ "{:,}".format(h.closing_rank) }} (w={{ "%.2f"|format(h.weight) }})</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+{% endfor %}
+
+<p><a href="/">New prediction</a></p>
+{% endif %}
+{% endblock %}

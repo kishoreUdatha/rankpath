@@ -1,0 +1,58 @@
+version: "3.9"
+
+# RankPath v2 — NEET UG MBBS Seat Allotment Analytics & Prediction
+# Local stack: Postgres + Next.js web + Python ETL worker.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rankpath
+      POSTGRES_PASSWORD: rankpath
+      POSTGRES_DB: rankpath
+    ports:
+      - "5433:5432"
+    volumes:
+      - rankpath_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rankpath -d rankpath"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://rankpath:rankpath@db:5432/rankpath?schema=public
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data:ro
+
+  etl:
+    build:
+      context: ./etl
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://rankpath:rankpath@db:5432/rankpath
+      RAW_DIR: /work/data/raw
+    volumes:
+      - ./data:/work/data
+      - ./etl:/work/etl
+    # Run on demand:  docker compose run --rm etl python -m etl.seed_database
+    command: ["python", "-m", "etl.seed_database", "--demo"]
+
+volumes:
+  rankpath_pg:

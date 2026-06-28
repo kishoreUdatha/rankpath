@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Backtest - RankPath{% endblock %}
+{% block content %}
+<h1>Backtest results</h1>
+<p>Train on past years, predict the most recent year, measure how often the actual cutoff would have landed in Safe/High/Borderline.</p>
+{% if not rows %}
+<p class="muted">No backtest runs yet. Run <code>python -m backend.backtest</code> from the project root.</p>
+{% else %}
+<table>
+  <thead>
+    <tr><th>Run</th><th>Train years</th><th>Test year</th><th>Category</th><th>n</th><th>Correct</th><th>Accuracy</th></tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="muted">{{ r.run_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>{{ r.train_years }}</td>
+      <td>{{ r.test_year }}</td>
+      <td>{{ r.category }}</td>
+      <td>{{ r.predicted_count }}</td>
+      <td>{{ r.correct_count }}</td>
+      <td><strong>{{ "%.1f"|format(r.accuracy * 100) }}%</strong></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
