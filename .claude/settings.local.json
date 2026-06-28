@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONPATH=. python -m etl.parse_pdf_allotments data/raw/mcc/2024/final_result_of_round_1_neet_ug_2024.pdf --default-quota AIQ --out data/normalized/mcc_2024_r1.parquet)",
+      "Bash(tee data/normalized/parse_full.log)"
+    ]
+  }
+}

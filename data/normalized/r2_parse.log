@@ -1,0 +1,2 @@
+final_allotment_result_for_round_2_of_ug_counselling_2024.pdf: parsed 33890 rows
+Wrote 33890 rows -> data\normalized\mcc_2024_r2.parquet

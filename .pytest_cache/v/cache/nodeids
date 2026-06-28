@@ -1,0 +1,16 @@
+[
+  "tests/test_category_map.py::test_basic_codes",
+  "tests/test_category_map.py::test_empty_and_unknown",
+  "tests/test_category_map.py::test_pwd_variants",
+  "tests/test_predictor.py::test_bucket_boundary_inclusive",
+  "tests/test_predictor.py::test_bucket_order_matches_thresholds",
+  "tests/test_predictor.py::test_bucket_thresholds",
+  "tests/test_predictor.py::test_confidence_at_parity",
+  "tests/test_predictor.py::test_confidence_monotonic",
+  "tests/test_predictor.py::test_weights_dispatch",
+  "tests/test_predictor_integration.py::test_at_parity_lands_borderline",
+  "tests/test_predictor_integration.py::test_explanation_lists_all_three_years",
+  "tests/test_predictor_integration.py::test_strong_rank_lands_safe",
+  "tests/test_predictor_integration.py::test_weak_rank_lands_unlikely",
+  "tests/test_predictor_integration.py::test_year_cutoff_excludes_test_year"
+]
