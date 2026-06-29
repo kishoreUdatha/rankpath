@@ -29,3 +29,20 @@ data/raw/**/*.xlsx
 data/raw/**/*.xls
 data/raw/**/*.csv
 data/normalized/
+
+# --- added: ETL venv, downloaded source PDFs, DB backups, reference screenshots ---
+.venv-etl/
+*.bak
+data/_ap/
+data/_mp/
+data/_states/
+data/_up/
+data/mcc_2025/
+data/seat_matrix/
+data/normalized/
+data/raw/**/*.pdf
+data/raw/ntruhs/
+data/raw/cee-kl/
+web/public/shots/*-full.png
+web/public/shots/v4edu*.png
+web/public/shots/landing*.png

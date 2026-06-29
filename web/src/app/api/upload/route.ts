@@ -8,6 +8,8 @@
  *     python -m etl.normalize_categories data/normalized/...
  *     python -m etl.validate_data data/normalized/...
  *     python -m etl.seed_database data/normalized/validated.parquet
+ *       ^ seed_database now also rebuilds CutoffSummary (the table the predictor
+ *         reads), so predictions reflect the new data immediately.
  *
  * Authentication: simple bearer token (ADMIN_API_TOKEN). Replace with real auth
  * (Auth.js / Clerk) before deploying.

@@ -48,6 +48,8 @@ export interface PredictRow {
   confidenceScore: number;        // 0–100
   band: PredictBand;
   bucket: PredictBucket;
+  tuitionAnnual?: number | null;  // INR/year (from FeeStructure)
+  feeIndicative?: boolean;        // true = type-based estimate, false = official
   note?: string;
 }
 
@@ -108,8 +110,12 @@ function project(closings: Array<{ year: number; closingRank: number }>): number
 export async function predict(input: PredictInput): Promise<PredictRow[]> {
   const topN = input.topN ?? 60;
 
+  // Round 1 only: R2/R3/STRAY closing ranks balloon as seats free up, and mixing
+  // them in (esp. STRAY) inflates the projected cutoff. R1 is the stable signal —
+  // same choice as the legacy predictor and the v0.1 spec (AIQ MBBS Round 1).
   const where: any = {
     category: input.category,
+    round: "R1",
     ...(input.quota ? { quota: input.quota } : {}),
   };
   if (input.preferredStates && input.preferredStates.length > 0) {
@@ -185,7 +191,24 @@ export async function predict(input: PredictInput): Promise<PredictRow[]> {
     a.projectedClosingRank - b.projectedClosingRank
   );
 
-  return out.slice(0, topN);
+  const result = out.slice(0, topN);
+
+  // Attach annual MBBS tuition from FeeStructure for the returned colleges.
+  const ids = [...new Set(result.map((r) => r.collegeId))];
+  if (ids.length) {
+    const fees = await prisma.feeStructure.findMany({
+      where: { collegeId: { in: ids } },
+      select: { collegeId: true, tuitionAnnual: true, isIndicative: true },
+    });
+    const feeMap = new Map(fees.map((f) => [f.collegeId, f]));
+    for (const r of result) {
+      const f = feeMap.get(r.collegeId);
+      r.tuitionAnnual = f?.tuitionAnnual ?? null;
+      r.feeIndicative = f?.isIndicative ?? true;
+    }
+  }
+
+  return result;
 }
 
 export function groupByBucket(rows: PredictRow[]) {

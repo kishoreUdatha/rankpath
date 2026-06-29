@@ -111,6 +111,25 @@ def _column_role(header_cell: str) -> Optional[str]:
         if cell in PWD_COLS: return "pwd"
         if cell in NAME_LIKE_COLS: return "_drop_name"
         if cell in IGNORE_COLS: return "_ignore"
+    # Fuzzy fallback for line-wrapped / garbled MCC headers such as
+    # "Allotte\nd\nInstitu\n" or "candidat\ne\nCategor" that exact-match misses.
+    compact = re.sub(r"[^a-z]", "", h_flat)
+    if not compact:
+        return None
+    if compact in {"sno", "slno", "serialno", "optionno", "remarks", "status"}:
+        return "_ignore"
+    if "candidat" in compact and "categ" in compact:
+        return "candidate_category"
+    if "categ" in compact:
+        return "seat_category"
+    if "institu" in compact:
+        return "institute"
+    if "cours" in compact or "programme" in compact:
+        return "course"
+    if "quota" in compact:
+        return "quota"
+    if compact.endswith("rank") or compact == "air":
+        return "rank"
     return None
 
 
@@ -121,41 +140,129 @@ def _to_int(s: Optional[str]) -> Optional[int]:
     return int(digits) if digits else None
 
 
+def _blank(v) -> bool:
+    """MCC uses '-' as an empty-cell placeholder; treat it (and whitespace) as missing.
+
+    Borderless-table recovery can merge several placeholder dashes into one cell
+    ('- -', '--'), so treat any all-dash/whitespace string as empty too.
+    """
+    if v is None:
+        return True
+    s = str(v).strip()
+    return s == "" or set(s) <= {"-", " "}
+
+
+def _parse_rank(s: Optional[str]) -> Optional[int]:
+    """Return the leading integer of a rank cell.
+
+    MCC rank cells come as a plain AIR ('13469'), with a paren suffix ('1(A)')
+    or a dotted option suffix ('1.01'); only the leading integer is the rank, so
+    '1.01' -> 1 and '1(A)' -> 1 rather than 101 / 1.
+    """
+    if s is None:
+        return None
+    m = re.match(r"\s*(\d[\d,]*)", str(s))
+    if not m:
+        return None
+    digits = re.sub(r"[^\d]", "", m.group(1))
+    return int(digits) if digits else None
+
+
+# Roles carrying per-allotment data inside a single round block.
+_BLOCK_ROLES = ("quota", "institute", "course", "seat_category", "candidate_category", "gender", "pwd")
+
+
+def _round_blocks(roles: list[Optional[str]]) -> Optional[list[tuple[int, int]]]:
+    """Detect MCC's longitudinal 'Round 1 | Round 2 | Round 3' layout.
+
+    Such files repeat (Quota, Institute, Course[, Category]) once per round, so the
+    role list holds more than one 'institute'. Return one (start, end_inclusive)
+    column span per round block, or None for an ordinary single-round table.
+    """
+    inst_idx = [i for i, r in enumerate(roles) if r == "institute"]
+    if len(inst_idx) <= 1:
+        return None
+    spans: list[tuple[int, int]] = []
+    for k, ii in enumerate(inst_idx):
+        start = ii - 1 if ii > 0 and roles[ii - 1] == "quota" else ii
+        if k + 1 < len(inst_idx):
+            nxt = inst_idx[k + 1]
+            end = (nxt - 2) if (nxt > 0 and roles[nxt - 1] == "quota") else (nxt - 1)
+        else:
+            end = len(roles) - 1
+        spans.append((start, end))
+    return spans
+
+
+def _block_record(row: list[Optional[str]], roles: list[Optional[str]], start: int, end: int) -> dict:
+    rec: dict = {}
+    for i in range(start, min(end + 1, len(row))):
+        if roles[i] in _BLOCK_ROLES:
+            val = row[i]
+            if isinstance(val, str):
+                val = re.sub(r"\s+", " ", val).strip()
+            rec[roles[i]] = val
+    return rec
+
+
 def _row_to_allotment(
     row: list[Optional[str]],
     roles: list[Optional[str]],
     meta: dict,
     file_meta: dict,
 ) -> Optional[AllotmentRow]:
-    record: dict = {}
-    for value, role in zip(row, roles):
-        if role is None or role in ("_drop_name", "_ignore"):
-            continue
-        if isinstance(value, str):
-            # Collapse newlines inside a single cell so "Open\nPwD" → "Open PwD"
-            record[role] = re.sub(r"\s+", " ", value).strip()
-        else:
-            record[role] = value
-
-    if not record.get("institute") or not record.get("rank"):
-        return None
-    # Skip rows that are actually the header row repeated mid-table
-    if str(record.get("rank", "")).lower() == "rank":
+    # Rank is shared across all round blocks; find it once.
+    rank_val = next((row[i] for i, r in enumerate(roles) if r == "rank" and i < len(row)), None)
+    # Skip header rows repeated mid-table.
+    if rank_val is not None and str(rank_val).strip().lower() == "rank":
         return None
 
-    raw = "|".join(str(v) for v in row)
+    blocks = _round_blocks(roles)
+    if blocks is None:
+        # Ordinary single-round table.
+        record: dict = {}
+        for value, role in zip(row, roles):
+            if role is None or role in ("_drop_name", "_ignore"):
+                continue
+            if isinstance(value, str):
+                # Collapse newlines inside a single cell so "Open\nPwD" -> "Open PwD"
+                record[role] = re.sub(r"\s+", " ", value).strip()
+            else:
+                record[role] = value
+        chosen, round_ = record, file_meta.get("round")
+    else:
+        # Longitudinal layout: a candidate's current seat is their rightmost
+        # populated round block; the category columns live in that final block.
+        chosen, round_ = None, None
+        for k, (start, end) in enumerate(blocks):
+            rec = _block_record(row, roles, start, end)
+            if not _blank(rec.get("institute")):
+                chosen, round_ = rec, f"R{k + 1}"  # keep last -> rightmost wins
+        if chosen is None:
+            return None
+
+    if _blank(chosen.get("institute")) or _blank(rank_val):
+        return None
+
+    def _clean(v):
+        if _blank(v):
+            return None
+        return re.sub(r"\s+", " ", v).strip() if isinstance(v, str) else v
+
+    pwd_raw = str(chosen.get("pwd", "")).strip().lower()
+    raw = "|".join("" if c is None else str(c) for c in row)
     return AllotmentRow(
         year=file_meta.get("year"),
-        round=file_meta.get("round"),
+        round=round_,
         authority=file_meta.get("authority"),
-        institute_name=record.get("institute"),
-        course=record.get("course"),
-        quota=record.get("quota") or meta.get("default_quota"),
-        seat_category=record.get("seat_category"),
-        candidate_category=record.get("candidate_category"),
-        candidate_rank=_to_int(record.get("rank")),
-        gender=record.get("gender"),
-        pwd=(str(record.get("pwd", "")).strip().lower() in {"y", "yes", "true", "1", "pwd"}) or None,
+        institute_name=_clean(chosen.get("institute")),
+        course=_clean(chosen.get("course")),
+        quota=_clean(chosen.get("quota")) or meta.get("default_quota"),
+        seat_category=_clean(chosen.get("seat_category")),
+        candidate_category=_clean(chosen.get("candidate_category")),
+        candidate_rank=_parse_rank(rank_val),
+        gender=_clean(chosen.get("gender")),
+        pwd=(pwd_raw in {"y", "yes", "true", "1", "pwd"}) or None,
         source_file=meta["source_file"],
         last_updated=meta["last_updated"],
         raw_row_hash=hashlib.sha1(raw.encode("utf-8")).hexdigest(),
@@ -172,9 +279,23 @@ def parse_pdf(path: Path, default_quota: Optional[str] = None, max_pages: Option
     if not file_meta.get("year"):
         m = re.search(r"(20\d{2})", path.name)
         if m: file_meta["year"] = int(m.group(1))
+    if not file_meta.get("year"):
+        # Year is often only in the folder path (data/raw/mcc/2024/...), not the
+        # filename (e.g. provisional_allotment_result_..._round_2.pdf).
+        for part in path.parts:
+            if re.fullmatch(r"20\d{2}", part):
+                file_meta["year"] = int(part)
+                break
     if not file_meta.get("round"):
-        m = re.search(r"round[\s_-]*(\d+|mop[- ]?up|stray|special)", path.name, re.I)
-        if m: file_meta["round"] = "R" + m.group(1).upper().replace(" ", "").replace("-", "")
+        name = path.name.lower()
+        if "stray" in name:
+            file_meta["round"] = "STRAY"
+        elif "mop" in name:
+            file_meta["round"] = "MOPUP"
+        else:
+            # 1-2 digit round only, so a 4-digit year ("round_2023") isn't mistaken for one.
+            m = re.search(r"round[\s_-]*(\d{1,2})(?!\d)", name)
+            if m: file_meta["round"] = "R" + m.group(1)
     meta = {
         "source_file": path.name,
         "last_updated": datetime.now(timezone.utc).isoformat(),

@@ -1,56 +1,60 @@
-// RankPath v2 — Postgres schema for NEET UG MBBS allotment analytics.
-// All raw fields are preserved on Allotment alongside the normalized columns
-// so we never lose provenance and can re-normalize as mappings evolve.
+// RankPath — SQLite-ported schema (original Postgres version: schema.postgres.prisma.bak).
+// SQLite doesn't support Prisma enums or scalar lists, so enum fields became String
+// (same literal values) and CutoffSummary.sourceFiles String[] became a String.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// ---------- Enums ----------
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  // Student profile (captured at registration; used to pre-fill predictions)
+  phone         String?
+  gender        String?   // Male | Female | Other
+  category      String?   // OPEN | EWS | OBC | SC | ST
+  domicileState String?   // state code, e.g. AP
+  neetRank      Int?      // All India Rank
+  neetScore     Int?      // NEET marks
+  neetYear      Int?      // attempt year
+  hasPaid       Boolean   @default(false)
+  paidAt        DateTime?
+  role          String    @default("STUDENT")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  payments      Payment[]
 
-enum CollegeType {
-  AIIMS
-  JIPMER
-  ESIC
-  CENTRAL
-  GOVT
-  PRIVATE
-  DEEMED
-  UNKNOWN
+  @@index([email])
 }
 
-enum FeeBand {
-  LOW         // < ~5 L/year
-  MID         // 5–15 L/year
-  HIGH        // 15–25 L/year (most deemed)
-  VERY_HIGH   // > 25 L/year (NRI seats)
-  UNKNOWN
-}
+model Payment {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  provider   String   @default("DEMO") // DEMO | RAZORPAY
+  amount     Int                       // in paise (₹99 = 9900)
+  currency   String   @default("INR")
+  status     String   @default("CREATED") // CREATED | PAID | FAILED
+  orderId    String?
+  paymentRef String?
+  createdAt  DateTime @default(now())
 
-enum Gender {
-  M
-  F
-  O
+  @@index([userId])
+  @@index([status])
 }
-
-enum RecordStatus {
-  PENDING_REVIEW
-  PUBLISHED
-  REJECTED
-}
-
-// ---------- Reference tables ----------
 
 model CounsellingAuthority {
   id           String   @id @default(cuid())
-  code         String   @unique             // MCC, KEA, NTRUHS, TNMCC, ...
+  code         String   @unique
   name         String
-  scope        String?                       // human-readable scope
+  scope        String?
   urlCurrent   String?
   urlArchive   String?
   state        State?   @relation(fields: [stateId], references: [id])
@@ -61,30 +65,31 @@ model CounsellingAuthority {
 }
 
 model State {
-  id                  String   @id @default(cuid())
-  code                String   @unique       // AP, KA, TN, ...
-  name                String
-  colleges            College[]
-  authorities         CounsellingAuthority[]
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  colleges     College[]
+  authorities  CounsellingAuthority[]
 }
 
 model College {
-  id           String   @id @default(cuid())
-  name         String
-  code         String?
-  type         CollegeType @default(UNKNOWN)
-  city         String?
-  state        State?   @relation(fields: [stateId], references: [id])
-  stateId      String?
-  feeBandDefault FeeBand @default(UNKNOWN)
-  isMinority   Boolean  @default(false)
-  isDeemed     Boolean  @default(false)
-  isCentral    Boolean  @default(false)
-  allotments   Allotment[]
-  seatMatrix   SeatMatrix[]
-  cutoffs      CutoffSummary[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  code           String?
+  type           String   @default("UNKNOWN")
+  city           String?
+  state          State?   @relation(fields: [stateId], references: [id])
+  stateId        String?
+  feeBandDefault String   @default("UNKNOWN")
+  isMinority     Boolean  @default(false)
+  isDeemed       Boolean  @default(false)
+  isCentral      Boolean  @default(false)
+  allotments     Allotment[]
+  seatMatrix     SeatMatrix[]
+  cutoffs        CutoffSummary[]
+  fees           FeeStructure[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([name, stateId])
   @@index([type])
@@ -93,74 +98,61 @@ model College {
 
 model Course {
   id          String   @id @default(cuid())
-  name        String   @unique               // MBBS, BDS
+  name        String   @unique
   durationYrs Int      @default(5)
   allotments  Allotment[]
   seatMatrix  SeatMatrix[]
   cutoffs     CutoffSummary[]
 }
 
-// ---------- Mapping tables (mirrored from /etl/mappings JSONs) ----------
-
 model CategoryMap {
-  id           String  @id @default(cuid())
-  rawCode      String  @unique
-  normalized   String                          // OPEN, EWS, OBC, SC, ST, PwD, BC-A, ...
-  state        String?                         // null = master mapping
-  note         String?
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  rawCode    String   @unique
+  normalized String
+  state      String?
+  note       String?
+  createdAt  DateTime @default(now())
 }
 
 model QuotaMap {
-  id          String  @id @default(cuid())
-  rawCode     String  @unique
-  normalized  String                           // AIQ, STATE, MANAGEMENT, NRI, DEEMED, ...
-  note        String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  rawCode    String   @unique
+  normalized String
+  note       String?
+  createdAt  DateTime @default(now())
 }
 
-// ---------- Core fact tables ----------
-
 model Allotment {
-  id                    String   @id @default(cuid())
-  year                  Int
-  round                 String                          // R1, R2, MOPUP, STRAY
-  authority             CounsellingAuthority? @relation(fields: [authorityId], references: [id])
-  authorityId           String?
-  authorityCode         String                           // denormalized for fast filters
-  state                 String?                          // ISO state code (denormalized)
-
-  college               College? @relation(fields: [collegeId], references: [id])
-  collegeId             String?
-  course                Course?  @relation(fields: [courseId], references: [id])
-  courseId              String?
-
-  // ----- Raw fields (preserved verbatim) -----
-  rawInstituteName      String?
-  rawCourse             String?
-  rawSeatCategory       String?
-  rawCandidateCategory  String?
-  rawQuota              String?
-
-  // ----- Normalized fields -----
-  normalizedCategory    String?                          // OPEN / EWS / OBC / SC / ST / BC-A ...
-  normalizedQuota       String?                          // AIQ / STATE / MANAGEMENT / NRI / DEEMED ...
-
-  candidateRank         Int?
-  neetMarks             Int?
-  gender                Gender?
-  pwd                   Boolean?
-
-  collegeType           CollegeType @default(UNKNOWN)
-  feeBand               FeeBand     @default(UNKNOWN)
-
-  sourceUrl             String?
-  sourceFile            String?
-  lastUpdated           DateTime    @default(now())
-  rawRowHash            String      @unique
-  status                RecordStatus @default(PUBLISHED)
-
-  createdAt             DateTime @default(now())
+  id                   String   @id @default(cuid())
+  year                 Int
+  round                String
+  authority            CounsellingAuthority? @relation(fields: [authorityId], references: [id])
+  authorityId          String?
+  authorityCode        String
+  state                String?
+  college              College? @relation(fields: [collegeId], references: [id])
+  collegeId            String?
+  course               Course?  @relation(fields: [courseId], references: [id])
+  courseId             String?
+  rawInstituteName     String?
+  rawCourse            String?
+  rawSeatCategory      String?
+  rawCandidateCategory String?
+  rawQuota             String?
+  normalizedCategory   String?
+  normalizedQuota      String?
+  candidateRank        Int?
+  neetMarks            Int?
+  gender               String?
+  pwd                  Boolean?
+  collegeType          String   @default("UNKNOWN")
+  feeBand              String   @default("UNKNOWN")
+  sourceUrl            String?
+  sourceFile           String?
+  lastUpdated          DateTime @default(now())
+  rawRowHash           String   @unique
+  status               String   @default("PUBLISHED")
+  createdAt            DateTime @default(now())
 
   @@index([year, round])
   @@index([normalizedCategory])
@@ -169,73 +161,91 @@ model Allotment {
   @@index([collegeId, courseId, year, round])
 }
 
-model SeatMatrix {
+model FeeStructure {
   id            String   @id @default(cuid())
-  year          Int
-  round         String
   college       College  @relation(fields: [collegeId], references: [id])
   collegeId     String
-  course        Course   @relation(fields: [courseId], references: [id])
-  courseId      String
-  quota         String
-  category      String
-  seats         Int
-  sourceFile    String?
+  course        String   @default("MBBS")
+  year          Int?
+  tuitionAnnual Int?     // INR per year
+  hostelAnnual  Int?
+  otherAnnual   Int?     // misc/university/exam charges per year
+  nriTuition    Int?     // INR per year for NRI seats
+  currency      String   @default("INR")
+  isIndicative  Boolean  @default(true) // true = type-based estimate, false = official figure
+  sourceUrl     String?
+  note          String?
+  updatedAt     DateTime @updatedAt
+
+  @@unique([collegeId, course, year])
+  @@index([collegeId])
+}
+
+model SeatMatrix {
+  id         String   @id @default(cuid())
+  year       Int
+  round      String
+  college    College  @relation(fields: [collegeId], references: [id])
+  collegeId  String
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   String
+  quota      String
+  category   String
+  seats      Int
+  sourceFile String?
 
   @@unique([year, round, collegeId, courseId, quota, category])
   @@index([year, round])
 }
 
-/// Pre-aggregated closing-rank summary so the predictor avoids scanning all Allotments.
 model CutoffSummary {
-  id              String   @id @default(cuid())
-  year            Int
-  round           String
-  college         College  @relation(fields: [collegeId], references: [id])
-  collegeId       String
-  course          Course   @relation(fields: [courseId], references: [id])
-  courseId        String
-  category        String                                 // normalized
-  quota           String                                 // normalized
-  openingRank     Int?
-  closingRank     Int
-  allotmentCount  Int
-  sourceFiles     String[]                               // provenance set
+  id             String   @id @default(cuid())
+  year           Int
+  round          String
+  college        College  @relation(fields: [collegeId], references: [id])
+  collegeId      String
+  course         Course   @relation(fields: [courseId], references: [id])
+  courseId       String
+  category       String
+  quota          String
+  openingRank    Int?
+  closingRank    Int
+  allotmentCount Int
+  sourceFiles    String?
 
   @@unique([year, round, collegeId, courseId, category, quota])
   @@index([category, quota, year])
   @@index([collegeId, courseId])
 }
 
-/// Audit trail for every prediction served — used to backtest accuracy.
 model PredictionLog {
-  id                String   @id @default(cuid())
-  createdAt         DateTime @default(now())
-  inputRank         Int
-  inputCategory     String
-  inputQuota        String
-  inputState        String?
-  inputGender       Gender?
-  inputPwd          Boolean?
-  inputCollegeType  String?
-  inputBudget       String?
-  resultCount       Int
-  topResults        Json                                 // [{collegeId, courseId, score, band}]
-  appVersion        String?
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  inputRank        Int
+  inputCategory    String
+  inputQuota       String
+  inputState       String?
+  inputGender      String?
+  inputPwd         Boolean?
+  inputCollegeType String?
+  inputBudget      String?
+  resultCount      Int
+  topResults       String
+  appVersion       String?
 
   @@index([createdAt])
 }
 
 model AdminUpload {
-  id          String   @id @default(cuid())
-  filename    String
-  authority   String?
-  year        Int?
-  round       String?
-  rowsParsed  Int      @default(0)
-  rowsLoaded  Int      @default(0)
-  errors      Json?
-  status      RecordStatus @default(PENDING_REVIEW)
-  uploadedBy  String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  filename   String
+  authority  String?
+  year       Int?
+  round      String?
+  rowsParsed Int      @default(0)
+  rowsLoaded Int      @default(0)
+  errors     String?
+  status     String   @default("PENDING_REVIEW")
+  uploadedBy String?
+  createdAt  DateTime @default(now())
 }
