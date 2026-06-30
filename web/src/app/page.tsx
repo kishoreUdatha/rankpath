@@ -23,7 +23,7 @@ const FAQ = [
   { q: "How accurate are the predictions?", a: "Predictions are probability estimates built from 3 years of official MCC and state allotment data, projected with a weighted trend model. They are a strong planning aid — not a guarantee of admission." },
   { q: "What does the ₹99 unlock include?", a: "Unlimited rank predictions, Dream/Realistic/Safe college lists, the counselling & web-options strategy, the cutoff explorer and college profiles — for the whole season." },
   { q: "Is this a subscription?", a: "No. It is a single one-time payment. You are never auto-charged." },
-  { q: "Which quotas and states are covered?", a: "All India Quota (AIQ), Deemed and Central institutes, plus state quotas — with Andhra Pradesh fully ingested and more states being added." },
+  { q: "Which quotas and states are covered?", a: "Nationwide All India Quota (AIQ), Deemed and Central institutes, plus state-quota cutoffs for 9 states — Andhra Pradesh, Gujarat, Karnataka, Madhya Pradesh, Telangana, Maharashtra, West Bengal, Bihar and Puducherry. Seat counts use the official NMC seat matrix covering all 770+ MBBS colleges in India." },
 ];
 
 const TESTIMONIALS = [

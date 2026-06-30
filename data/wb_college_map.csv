@@ -1,0 +1,38 @@
+match_key,dev_college_id,type,college_name
+NILRATAN,col_9358700175,GOVT,Nilratan Sirkar Medical College Kolkata
+CALCUTTA NATIONAL,col_8740864194,GOVT,Calcutta National Medical College Kolkata
+KAR MEDICAL,col_7138427399,GOVT,RG Kar Medical College Kolkata
+PG MEDICAL EDUCATION,col_8111777624,GOVT,Institute of PG Medical Education and Research (IPGMER) Kolkata
+MIDNAPORE,col_4046669946,GOVT,Midnapore Medical College
+BURDWAN MEDICAL,col_0942795538,GOVT,Burdwan Medical College
+BANKURA,col_7185155369,GOVT,Bankura Sammilani Medical College
+NORTH BENGAL MEDICAL,col_4632002787,GOVT,North Bengal Medical College Darjeeling
+MURSHIDABAD,col_4742222470,GOVT,Murshidabad Medical College and Hospital
+SAGORE DUTTA,col_3436763170,GOVT,College of Medicine and Sagore Dutta Hospital Kamarhati
+JNM HOSPITAL,col_4154504097,GOVT,College of Medicine and JNM Hospital Kalyani
+MALDA,col_3807053711,GOVT,Malda Medical College and Hospital
+BARASAT,col_4955077057,GOVT,Barasat Government Medical College and Hospital
+DIAMOND HARBOUR,col_5416104235,GOVT,Diamond Harbour Govt Medical College
+JHARGRAM,col_8740587435,GOVT,Jhargram Government Medical College and Hospital
+PRAFULLA CHANDRA SEN,col_5890019544,GOVT,Prafulla Chandra Sen Government Medical College Arambagh
+TAMRALIPTO,col_3333521779,GOVT,Tamralipto Government Medical College and Hospital
+RAMPURHAT,col_3590248230,GOVT,Rampurhat Govt Medical College and Hospital
+SARAT CHANDRA,col_8663714859,GOVT,Sarat Chandra Chattopadhyay Govt Medical College Uluberia
+DEBEN MAHATA,col_7544650085,GOVT,Deben Mahata Government Medical College Purulia
+JITENDRA NARAYAN,col_3803890474,GOVT,Maharaja Jitendra Narayan Medical College Coochbehar
+RAIGANJ,col_7523139205,GOVT,Raiganj Government Medical College
+JOKA,col_7686433596,ESIC,ESIC Medical College Joka Kolkata
+I Q CITY,col_wb_iqcity,PRIVATE,IQ City Medical College Durgapur
+GOURI DEVI,col_wb_gouridevi,PRIVATE,Gouri Devi Institute of Medical Sciences Durgapur
+RAMKRISHNA INSTITUTE,col_wb_srims,PRIVATE,Shri Ramkrishna Institute of Medical Sciences Durgapur
+JAGANNATH GUPTA,col_wb_jagannath,PRIVATE,Jagannath Gupta Institute of Medical Sciences Kolkata
+KPC MEDICAL,col_wb_kpc,PRIVATE,KPC Medical College and Hospital Jadavpur
+SANTINIKETAN,col_wb_santiniketan,PRIVATE,Santiniketan Medical College Bolpur
+ICARE,col_wb_icare,PRIVATE,ICARE Institute of Medical Sciences Haldia
+JIS SCHOOL,col_wb_jis,PRIVATE,JIS School of Medical Science and Research Howrah
+JMN MEDICAL,col_wb_jmn,PRIVATE,JMN Medical College Chakdaha
+KRISHNANAGAR,col_wb_krishnanagar,PRIVATE,Krishnanagar Institute of Medical Sciences
+EAST WEST,col_wb_eastwest,PRIVATE,East West Institute of Medical Sciences and Research
+JAKIR HOSAIN,col_wb_jakir,PRIVATE,Jakir Hosain Medical College and Research Institute
+MEDICAL COLLEGE KOLKATA,col_6936662730,GOVT,Medical College Kolkata
+GOVERNMENT MEDICAL COLLEGE AND HOSPITAL,col_0864377850,GOVT,Government Medical College and Hospital WB

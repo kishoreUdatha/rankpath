@@ -1,0 +1,41 @@
+gj_code,dev_college_id,type,college_name
+AMED,col_1971197553,GOVT,B J Medical College Ahmedabad
+BMED,col_3296088503,GOVT,Government Medical College Vadodara (Baroda)
+JMED,col_3805284110,GOVT,MP Shah Government Medical College Jamnagar
+SMED,col_9749700828,GOVT,Government Medical College Surat
+RMED,col_1091586800,GOVT,Pt Deendayal Upadhyay Medical College Rajkot
+BHMED,col_6987771299,GOVT,Government Medical College Bhavnagar
+RAJMED,col_7636748357,GOVT,GMERS Medical College Rajpipla
+MORMED,col_3559526794,GOVT,GMERS Medical College Morbi
+NAVMED,col_8565971055,GOVT,GMERS Medical College Navsari
+SOLMED,col_gj_solmed,GOVT,GMERS Medical College Sola Ahmedabad
+GOTMED,col_gj_gotmed,GOVT,GMERS Medical College Gotri Vadodara
+GMED,col_gj_gmed,GOVT,GMERS Medical College Gandhinagar
+PATMED,col_gj_patmed,GOVT,GMERS Medical College Dharpur Patan
+VALMED,col_gj_valmed,GOVT,GMERS Medical College Valsad
+JUMED,col_gj_jumed,GOVT,GMERS Medical College Junagadh
+HIMMED,col_gj_himmed,GOVT,GMERS Medical College Himmatnagar
+VADMED,col_gj_vadmed,GOVT,GMERS Medical College Vadnagar
+PORMED,col_gj_pormed,GOVT,GMERS Medical College Porbandar
+NHL,col_gj_nhl,GOVT,Smt NHL Municipal Medical College Ahmedabad
+SMC,col_gj_smc,GOVT,SMIMER Surat
+SILMED,col_gj_silmed,GOVT,National Modern Govt Medical College Silvassa
+AMRMED,col_gj_amrmed,GOVT,Shantabaa Medical College Amreli
+KMED,col_gj_kmed,PRIVATE,Pramukhswami Medical College Karamsad
+CUMED,col_gj_cumed,PRIVATE,CU Shah Medical College Surendranagar
+BHUMED,col_gj_bhumed,PRIVATE,Gujarat Adani Institute of Medical Sciences Bhuj
+GCSMED,col_gj_gcsmed,PRIVATE,GCS Medical College Ahmedabad
+PRMED,col_gj_prmed,PRIVATE,Parul Institute of Medical Sciences Vadodara
+PLMED,col_gj_plmed,PRIVATE,Banas Medical College Palanpur
+ZYMED,col_gj_zymed,PRIVATE,Zydus Medical College Dahod
+NDMED,col_gj_ndmed,PRIVATE,Dr ND Desai Faculty of Medical Science Nadiad
+VISMED,col_gj_vismed,PRIVATE,Nootan Medical College Visnagar
+MKMED,col_gj_mkmed,PRIVATE,Dr MK Shah Medical College Ahmedabad
+SALMED,col_gj_salmed,PRIVATE,SAL Institute of Medical Sciences Ahmedabad
+ANAMED,col_gj_anamed,PRIVATE,Ananya College of Medicine and Research
+SWAMED,col_gj_swamed,PRIVATE,Swaminarayan Institute of Medical Sciences
+KIRMED,col_gj_kirmed,PRIVATE,Kiran Medical College Surat
+GODHMED,col_9550847583,GOVT,GMERS Medical College Godhra
+NAMOMED,col_gj_namomed,GOVT,Narendra Modi Medical College Ahmedabad
+BHARMED,col_gj_bharmed,PRIVATE,Dr Kiran C Patel Medical College Bharuch
+BHAGMED,col_gj_bhagmed,PRIVATE,Bhagyoday Medical College Kadi Mehsana

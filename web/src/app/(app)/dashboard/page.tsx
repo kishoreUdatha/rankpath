@@ -60,11 +60,11 @@ export default async function Home() {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white border border-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-ink-900">State-wise Seats (2024, Round 1)</h3>
+            <h3 className="text-sm font-semibold text-ink-900">State-wise MBBS Seats (NMC 2024-25)</h3>
             <a href="/states" className="text-xs text-brand-600 hover:underline">View all →</a>
           </div>
           <StateSeatsChart data={s.byState} />
-          <p className="text-xs text-ink-400 mt-1">Top 12 states by seats allotted across all quotas.</p>
+          <p className="text-xs text-ink-400 mt-1">Top 12 states by official NMC MBBS sanctioned intake (2024-25).</p>
         </div>
         <div className="bg-white border border-border rounded-lg p-4">
           <h3 className="text-sm font-semibold text-ink-900 mb-2">State-wise Seat Distribution</h3>
