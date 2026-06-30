@@ -43,7 +43,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const isActive = (href: string) => href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
   return (
-    <aside className="w-64 shrink-0 bg-brand-900 min-h-screen sticky top-0 hidden md:flex flex-col">
+    <aside className="w-64 shrink-0 bg-brand-900 h-screen sticky top-0 self-start hidden md:flex flex-col">
       <div className="px-5 py-5 flex items-center gap-3 border-b border-white/10">
         <span className="inline-grid place-items-center w-9 h-9 rounded-lg bg-brand-600 text-white font-bold">R</span>
         <div className="leading-tight">

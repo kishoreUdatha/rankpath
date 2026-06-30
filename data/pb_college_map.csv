@@ -1,0 +1,13 @@
+dev_college_id,type,match_keys,college_name
+col_pb_adesh,PRIVATE,Adesh,Adesh Institute of Medical Sciences Bathinda
+col_pb_cmc,PRIVATE,Christian,Christian Medical College Ludhiana
+col_pb_dmc,PRIVATE,DMC|Dayanand,Dayanand Medical College Ludhiana
+col_7617915458,GOVT,DBRA|Ambedkar State Institute|SIMS Mohali,Dr BR Ambedkar State Institute of Medical Sciences Mohali
+col_8643630502,GOVT,GGS|Guru Gobind Singh|Guru Govind Singh,Guru Gobind Singh Medical College Faridkot
+col_pb_giansagar,PRIVATE,Gian Sagar|Banur,Gian Sagar Medical College Banur
+col_9252370077,GOVT,Patiala,Government Medical College Patiala
+col_pb_pims,PRIVATE,PIMS|Punjab Institute,Punjab Institute of Medical Sciences Jalandhar
+col_pb_sgrd,PRIVATE,SGRD|Sri Guru Ram Das|Guru Ram Das,Sri Guru Ram Das Institute of Medical Sciences Amritsar
+col_pb_rimt,PRIVATE,RIMT,RIMT Medical College Mandi Gobindgarh
+col_pb_chintpurni,PRIVATE,Chintpurni,Chintpurni Medical College Pathankot
+col_7055267354,GOVT,GMC Amritsar|Amritsar,Government Medical College Amritsar
