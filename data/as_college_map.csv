@@ -1,0 +1,18 @@
+match_key,dev_college_id,college_name
+GAUHATI MEDICAL,col_3186370977,Gauhati Medical College Guwahati
+GUWAHATI MEDICAL,col_3186370977,Gauhati Medical College Guwahati
+ASSAM MEDICAL,col_6840126510,Assam Medical College Dibrugarh
+DIBRUGARH,col_6840126510,Assam Medical College Dibrugarh
+SILCHAR,col_2324527073,Silchar Medical College
+JORHAT,col_9802723146,Jorhat Medical College
+BARPETA,col_7143344168,Fakhruddin Ali Ahmed Medical College Barpeta
+FAKHRUDDIN,col_7143344168,Fakhruddin Ali Ahmed Medical College Barpeta
+TEZPUR,col_0554402038,Tezpur Medical College
+DHUBRI,col_5524721323,Dhubri Medical College
+DIPHU,col_7694033867,Diphu Medical College
+LAKHIMPUR,col_5683858289,Lakhimpur Medical College North Lakhimpur
+NALBARI,col_7945183438,Nalbari Medical College
+KOKRAJHAR,col_9513182912,Kokrajhar Medical College
+NAGAON,col_7529472000,Nagaon Medical College
+TINSUKIA,col_3019595719,Tinsukia Medical College
+DENTAL,SKIP,skip dental colleges
