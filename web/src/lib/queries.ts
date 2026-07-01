@@ -20,14 +20,19 @@ export async function getStats() {
      FROM "CutoffSummary" cs JOIN "Course" c ON c.id=cs."courseId"
      WHERE cs.quota='AIQ' AND c.name='MBBS' AND cs.round='R1' AND cs.year=2024
        AND cs.category IN ('OPEN','EWS','OBC','SC','ST') GROUP BY cs.category`);
-  // Official NMC nationwide MBBS sanctioned intake (UG Seat Matrix 2024-25)
+  // Official NMC nationwide MBBS sanctioned intake (UG Seat Matrix 2024-25).
+  // stateQuotaSeats = sanctioned seats of colleges for which we hold state-quota
+  // cutoff data (i.e. the seats our state-quota predictions actually cover).
   const byState = await prisma.$queryRawUnsafe<any[]>(
     `SELECT s.code code, s.name name,
             COUNT(DISTINCT sm."collegeId") colleges,
-            SUM(sm.seats) seats
+            SUM(sm.seats) seats,
+            SUM(CASE WHEN sc."collegeId" IS NOT NULL THEN sm.seats ELSE 0 END) "stateQuotaSeats"
      FROM "SeatMatrix" sm
      JOIN "College" col ON col.id = sm."collegeId"
      JOIN "State" s ON s.id = col."stateId"
+     LEFT JOIN (SELECT DISTINCT "collegeId" FROM "CutoffSummary" WHERE quota = 'STATE') sc
+            ON sc."collegeId" = sm."collegeId"
      WHERE sm."sourceFile" = 'nmc:ug_2024_25'
      GROUP BY s.code, s.name
      ORDER BY seats DESC`);
@@ -47,6 +52,7 @@ export async function getStats() {
       name: r.name as string,
       colleges: Number(r.colleges),
       seats: Number(r.seats),
+      stateQuotaSeats: Number(r.stateQuotaSeats ?? 0),
     })),
   };
 }

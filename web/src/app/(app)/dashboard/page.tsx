@@ -75,6 +75,7 @@ export default async function Home() {
                   <th className="text-left font-medium px-3 py-2">State</th>
                   <th className="text-right font-medium px-3 py-2">Colleges</th>
                   <th className="text-right font-medium px-3 py-2">Seats</th>
+                  <th className="text-right font-medium px-3 py-2" title="Sanctioned seats of colleges we hold state-quota cutoff data for">State-Quota Data</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -83,6 +84,7 @@ export default async function Home() {
                     <td className="px-3 py-2 text-ink-800"><span className="text-ink-400 mr-1">{r.code}</span>{r.name}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-ink-600">{r.colleges.toLocaleString("en-IN")}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-medium text-ink-900">{r.seats.toLocaleString("en-IN")}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{r.stateQuotaSeats ? <span className="text-emerald-700 font-medium">{r.stateQuotaSeats.toLocaleString("en-IN")}</span> : <span className="text-ink-300">—</span>}</td>
                   </tr>
                 ))}
               </tbody>
