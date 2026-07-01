@@ -14,9 +14,12 @@ export default function AdminUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
   const inp = useRef<HTMLInputElement>(null);
+  const isCsv = !!file && /\.csv$/i.test(file.name);
 
-  useEffect(() => { fetch("/api/stats").then((r) => r.json()).then(setStats).catch(() => {}); }, []);
+  function refreshStats() { fetch("/api/stats").then((r) => r.json()).then(setStats).catch(() => {}); }
+  useEffect(refreshStats, []);
 
   async function submit() {
     if (!file) return;
@@ -27,6 +30,27 @@ export default function AdminUpload() {
       const r = await fetch("/api/upload", { method: "POST", body: fd });
       setResult(await r.json().catch(() => ({ status: r.status })));
     } catch (e: any) { setResult({ error: String(e) }); }
+  }
+
+  // Parse + store + process a CSV straight into the DB (CutoffSummary).
+  async function importCsv() {
+    if (!file) return;
+    setBusy(true); setResult(null);
+    const fd = new FormData(); fd.append("file", file);
+    try {
+      const r = await fetch("/api/admin/import", { method: "POST", body: fd });
+      setResult(await r.json().catch(() => ({ status: r.status })));
+      refreshStats();
+    } catch (e: any) { setResult({ error: String(e) }); }
+    setBusy(false);
+  }
+
+  function downloadTemplate() {
+    const csv = "state,college,year,round,quota,category,opening,closing\n" +
+      "AP,Andhra Medical College Visakhapatnam,2024,R1,STATE,OPEN,742,9425\n" +
+      "KA,Bangalore Medical College,2024,R1,STATE,OPEN,120,2154\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url; a.download = "cutoffs_template.csv"; a.click(); URL.revokeObjectURL(url);
   }
 
   return (
@@ -61,15 +85,35 @@ export default function AdminUpload() {
               <div className="text-xs text-ink-400 mt-2">Supports: PDF, Excel, CSV (Max 25MB)</div>
               <input ref={inp} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </div>
-            <div className="flex justify-end gap-2">
-              <button className="h-10 px-4 rounded-md border border-border text-sm">Preview Data</button>
-              <button onClick={submit} disabled={!file} className="h-10 px-4 rounded-md bg-brand-600 text-white text-sm font-medium disabled:opacity-50">Process &amp; Validate</button>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <button onClick={downloadTemplate} className="text-xs text-brand-600 hover:underline">↓ Download CSV template</button>
+              <div className="flex gap-2">
+                <button onClick={submit} disabled={!file || busy} className="h-10 px-4 rounded-md border border-border text-sm disabled:opacity-50" title="Queue a PDF/Excel for the Python ETL">Queue file (PDF/Excel)</button>
+                <button onClick={importCsv} disabled={!isCsv || busy} className="h-10 px-4 rounded-md bg-brand-600 text-white text-sm font-medium disabled:opacity-50" title="Parse a CSV and store cutoffs directly in the DB">{busy ? "Processing…" : "Import to DB (CSV)"}</button>
+              </div>
             </div>
+            <p className="text-xs text-ink-400">
+              CSV columns: <code className="text-ink-600">state, college, year, round, quota, category, opening, closing</code>.
+              Colleges are matched to existing records within the state (unmatched rows are reported, never guessed). Categories: OPEN/EWS/OBC/SC/ST.
+            </p>
             {result && (
-              <div className="bg-surface-muted border border-border rounded-md p-3 text-xs">
-                {result.ok
-                  ? <><div className="text-emerald-700 font-medium">Queued (upload #{result.uploadId}). The Python ETL processes it:</div><pre className="mt-1 whitespace-pre-wrap text-ink-600">{(result.nextSteps ?? []).join("\n")}</pre></>
-                  : <div className="text-amber-700">Response: {JSON.stringify(result)} {result.error === "unauthorized" && "— set ADMIN_API_TOKEN to enable uploads."}</div>}
+              <div className="bg-surface-muted border border-border rounded-md p-3 text-xs space-y-1">
+                {result.inserted !== undefined ? (
+                  <>
+                    <div className="text-emerald-700 font-medium">Processed “{result.filename}” — {result.rowsParsed} rows.</div>
+                    <div className="text-ink-700">Inserted <b>{result.inserted}</b> · Updated <b>{result.updated}</b> · Skipped <b>{result.skipped}</b></div>
+                    {result.unmatchedColleges?.length > 0 && (
+                      <div className="text-amber-700">Unmatched colleges ({result.unmatchedColleges.length}): <span className="text-ink-600">{result.unmatchedColleges.join("; ")}</span></div>
+                    )}
+                    {result.errors?.length > 0 && (
+                      <pre className="whitespace-pre-wrap text-amber-700 mt-1">{result.errors.join("\n")}</pre>
+                    )}
+                  </>
+                ) : result.ok ? (
+                  <><div className="text-emerald-700 font-medium">Queued (upload #{result.uploadId}) for the Python ETL:</div><pre className="mt-1 whitespace-pre-wrap text-ink-600">{(result.nextSteps ?? []).join("\n")}</pre></>
+                ) : (
+                  <div className="text-amber-700">Error: {result.error || JSON.stringify(result)} {result.error === "forbidden" && "— admin role required."}</div>
+                )}
               </div>
             )}
           </div>
