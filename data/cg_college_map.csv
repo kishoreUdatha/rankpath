@@ -1,0 +1,18 @@
+match_key,dev_college_id,college_name
+JAWAHAR,col_0945947414,Pt JNM Medical College Raipur
+CHANDULAL,col_4294714855,Chandulal Chandrakar Memorial Govt Medical College Durg
+BILASPUR,col_8939385328,Chhattisgarh Institute of Medical Sciences Bilaspur
+KANKER,col_3368938106,Government Medical College Kanker
+MAHASAMUND,col_4233131639,Government Medical College Mahasamund
+KORBA,col_6870857642,Government Medical College Korba
+RAJNANDGAON,col_6345237094,Government Medical College Rajnandgaon
+JAGDALPUR,col_1146317566,Lt BRK Government Medical College Jagdalpur
+RAIGARH,col_6632887980,Lt LAM Government Medical College Raigarh
+AMBIKAPUR,col_9925716683,Rajmata Devendra Kumari Singhdeo Govt Medical College Ambikapur
+DENTAL,SKIP,skip all dental colleges
+BALAJI,SKIP,skip Shri Balaji (private)
+RAIPUR INSTITUTE,SKIP,skip RIMS Raipur (private)
+ABHISHEK,SKIP,skip Abhishek Mishra (private)
+RAWATPURA,SKIP,skip Shri Rawatpura (private)
+SHANKARACHARYA,SKIP,skip Shri Shankaracharya (private)
+LAKHIRAM,SKIP,skip Late Shri Lakhiram (dental)
