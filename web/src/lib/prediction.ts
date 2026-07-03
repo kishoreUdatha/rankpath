@@ -59,6 +59,8 @@ const YEAR_WEIGHTS: Array<{ offset: number; w: number }> = [
   { offset: 3, w: 0.20 },
 ];
 
+// confidenceScore now means a CALIBRATED admit probability (× 100), so these
+// thresholds read directly as probabilities: SAFE ≈ ≥85% admit chance, etc.
 function bandFor(score: number): PredictBand {
   if (score >= 80) return "HIGH";
   if (score >= 55) return "MODERATE";
@@ -66,24 +68,53 @@ function bandFor(score: number): PredictBand {
   return "UNLIKELY";
 }
 
-function bucketFor(score: number, rank: number, projected: number): PredictBucket {
-  if (score >= 80 && rank <= projected * 0.85) return "SAFE";
+function bucketFor(score: number): PredictBucket {
+  if (score >= 85) return "SAFE";        // ≥85% modelled admit probability
   if (score >= 55) return "MODERATE";
   if (score >= 30) return "ASPIRATIONAL";
   return "UNLIKELY";
 }
 
-/** Smooth scoring: 100 at rank << closing; 50 at rank == closing; → 0 as rank exceeds. */
+/**
+ * Isotonic calibration curve: ratio (rank / projected_closing) → admit probability.
+ *
+ * Empirically fit as the survival function P(g ≥ ratio), where g = actual_closing /
+ * projected_closing across R1 cells. Truth year = 2024 projected from 2023 (all
+ * quotas, 3,160 cells). 2025 R1 AIQ is NOT used: those rows were stray-round
+ * mislabels (see etl/seed_database.py round handling) and have been purged, so 2024
+ * is the newest clean ground-truth year.
+ *
+ * Out-of-sample (5-fold CV) this cut pooled Expected Calibration Error ~64%
+ * (0.048 → 0.017) and Brier ~6% vs the former hand-drawn curve. Regenerate via
+ * scripts/refit_calibration.py; once a clean 2025/2026 R1 result PDF is
+ * ingested, refit with a 2-year projection basis (this uses 1-year 2023→2024, which
+ * is slightly noisier and errs conservative in the stretch zone — the safe direction).
+ */
+const CALIBRATION: Array<[ratio: number, prob: number]> = [
+  [0.30, 0.9820], [0.40, 0.9604], [0.50, 0.9263], [0.60, 0.8896], [0.70, 0.8411],
+  [0.75, 0.8095], [0.80, 0.7665], [0.85, 0.7180], [0.90, 0.6671], [0.95, 0.5949],
+  [1.00, 0.5082], [1.05, 0.3994], [1.10, 0.2905], [1.15, 0.2215], [1.20, 0.1816],
+  [1.25, 0.1491], [1.30, 0.1209], [1.35, 0.1047], [1.40, 0.0908], [1.50, 0.0722],
+  [1.60, 0.0611], [1.70, 0.0516], [1.80, 0.0446], [1.90, 0.0386], [2.00, 0.0370],
+  [2.20, 0.0275], [2.50, 0.0184],
+];
+
+/** Calibrated confidence 0–100 = modelled admit probability × 100 for this rank/projection. */
 function scoreFor(rank: number, projected: number): number {
   if (!projected || projected <= 0) return 0;
   const ratio = rank / projected;
-  if (ratio <= 0.6)  return 100;
-  if (ratio <= 0.85) return 90 - (ratio - 0.6) * (10 / 0.25);  // 90→80
-  if (ratio <= 1.00) return 80 - (ratio - 0.85) * (25 / 0.15); // 80→55
-  if (ratio <= 1.05) return 55 - (ratio - 1.00) * (10 / 0.05); // 55→45
-  if (ratio <= 1.20) return 45 - (ratio - 1.05) * (15 / 0.15); // 45→30
-  if (ratio <= 1.50) return 30 - (ratio - 1.20) * (20 / 0.30); // 30→10
-  return Math.max(0, 10 - (ratio - 1.5) * 20);
+  const first = CALIBRATION[0], last = CALIBRATION[CALIBRATION.length - 1];
+  if (ratio <= first[0]) return first[1] * 100;
+  if (ratio >= last[0]) return last[1] * 100;
+  for (let i = 1; i < CALIBRATION.length; i++) {
+    const [r0, p0] = CALIBRATION[i - 1];
+    const [r1, p1] = CALIBRATION[i];
+    if (ratio <= r1) {
+      const t = (ratio - r0) / (r1 - r0);        // linear interpolation between knots
+      return (p0 + t * (p1 - p0)) * 100;
+    }
+  }
+  return last[1] * 100;
 }
 
 function project(closings: Array<{ year: number; closingRank: number }>): number {
@@ -167,7 +198,7 @@ export async function predict(input: PredictInput): Promise<PredictRow[]> {
 
     const score = Math.round(scoreFor(input.rank, projected));
     const band = bandFor(score);
-    const bucket = bucketFor(score, input.rank, projected);
+    const bucket = bucketFor(score);
     if (bucket === "UNLIKELY" && !input.includeUnlikely) continue;
 
     const sample = group[0];

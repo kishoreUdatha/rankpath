@@ -227,7 +227,13 @@ def load_validated(parquet_path: Path) -> int:
         row = {
             "id": f"alt_{r['raw_row_hash'][:16]}",
             "year": int(r["year"]) if pd.notna(r.get("year")) else None,
-            "round": r.get("round") or "R1",
+            # Never fabricate a round: a missing/blank round must NOT become "R1",
+            # or later-round (stray/mop-up) rows silently pollute the predictor's
+            # R1-only signal. Unknown rounds are tagged UNKNOWN and excluded from
+            # prediction (which filters round == "R1").
+            "round": (str(r["round"]).strip().upper()
+                      if pd.notna(r.get("round")) and str(r.get("round")).strip()
+                      else "UNKNOWN"),
             "authorityCode": r.get("authority") or "UNKNOWN",
             "state": r.get("state"),
             "collegeId": college_ids.get(r[institute_col]),

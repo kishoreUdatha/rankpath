@@ -24,6 +24,11 @@ DEV = os.path.join(ROOT, "web", "prisma", "dev.db")
 MAP = os.path.join(ROOT, "data", "br_college_map.csv")
 NOW = "2026-06-29T00:00:00.000Z"
 CAT = {"UR": "OPEN", "EWS": "EWS", "BC": "OBC", "EBC": "OBC", "SC": "SC", "ST": "ST"}
+# 2024/2025 layout: NEET-AIR-OPEN NEET-AIR-CLOSE STATE-OPEN STATE-CLOSE (take first two
+# = NEET All-India-Rank). NOTE: the 2023 UGMAC PDF publishes ONLY Bihar state ranks (no
+# NEET-AIR column), so it is intentionally NOT ingestible here — matching it would mix
+# state ranks into a NEET-AIR-keyed dataset. The strict 4-number regex makes 2023 a
+# safe no-op (0 rows) rather than silently ingesting the wrong metric.
 ROW = re.compile(r'^(.+?)\s+(M\.B\.B\.S\.)\s+(General|Female)\s+([A-Z]{2,4})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$')
 
 
