@@ -2,8 +2,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STATES as ALL_STATES, STATE_CODES } from "@/lib/states";
+import { estimateRankFromScore, NEET_MAX_MARKS } from "@/lib/score-to-rank";
 
-const STEPS = ["Rank", "Category & Quota", "Preferences", "Review", "Results"];
+const STEPS = ["Rank / Score", "Category & Quota", "Preferences", "Review", "Results"];
 const CATS = ["OPEN", "EWS", "OBC", "SC", "ST", "BC-A", "BC-B", "BC-C", "BC-D", "BC-E"];
 const STATES = [{ c: "", n: "—" }, ...ALL_STATES.map((s) => ({ c: s.code, n: s.name }))];
 const QUOTAS = ["AIQ", "STATE", "DEEMED", "NRI", "ESIC_IP"];
@@ -30,7 +31,7 @@ const selCls = "w-full h-10 rounded-md border border-border px-3 text-sm bg-whit
 export default function PredictWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [d, setD] = useState({ rank: "", category: "OPEN", subCategory: "", state: "", quota: "AIQ", pwd: "No", gender: "Any" });
+  const [d, setD] = useState({ rank: "", score: "", entryMode: "rank", category: "OPEN", subCategory: "", state: "", quota: "AIQ", pwd: "No", gender: "Any" });
   const set = (k: string, v: string) => setD((s) => ({ ...s, [k]: v }));
   const [prefilled, setPrefilled] = useState(false);
 
@@ -38,15 +39,20 @@ export default function PredictWizard() {
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then(({ user }) => {
       if (!user) return;
+      // If the student saved a score but no rank, open in score mode with an estimate.
+      const scoreOnly = !user.neetRank && user.neetScore;
+      const est = scoreOnly ? estimateRankFromScore(Number(user.neetScore)) : 0;
       setD((s) => ({
         ...s,
-        rank: s.rank || (user.neetRank ? String(user.neetRank) : ""),
+        entryMode: scoreOnly ? "score" : s.entryMode,
+        score: scoreOnly ? String(user.neetScore) : s.score,
+        rank: s.rank || (user.neetRank ? String(user.neetRank) : (est ? String(est) : "")),
         category: CATS.includes(user.category) ? user.category : s.category,
         state: user.domicileState && STATE_CODES.has(user.domicileState) ? user.domicileState : s.state,
         quota: user.domicileState && STATE_CODES.has(user.domicileState) ? "STATE" : s.quota,
         gender: user.gender === "Male" || user.gender === "Female" ? user.gender : s.gender,
       }));
-      if (user.neetRank || user.category || user.domicileState) setPrefilled(true);
+      if (user.neetRank || user.neetScore || user.category || user.domicileState) setPrefilled(true);
     }).catch(() => {});
   }, []);
 
@@ -74,11 +80,41 @@ export default function PredictWizard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-5">
             {step === 0 && (
-              <Field label="AIR Rank (NEET All-India Rank)">
-                <input value={d.rank} onChange={(e) => set("rank", e.target.value.replace(/[^\d]/g, ""))}
-                  placeholder="Enter AIR Rank" inputMode="numeric" className={selCls} />
-                <p className="text-xs text-ink-500 mt-2">Your overall NEET-UG rank as per the official result.</p>
-              </Field>
+              <div className="space-y-4">
+                <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
+                  {(["rank", "score"] as const).map((mode) => (
+                    <button key={mode} type="button" onClick={() => set("entryMode", mode)}
+                      className={`px-4 h-9 ${d.entryMode === mode ? "bg-brand-600 text-white" : "bg-white text-ink-600"}`}>
+                      {mode === "rank" ? "I know my AIR Rank" : "I know my NEET Score"}
+                    </button>
+                  ))}
+                </div>
+                {d.entryMode === "rank" ? (
+                  <Field label="AIR Rank (NEET All-India Rank)">
+                    <input value={d.rank} onChange={(e) => set("rank", e.target.value.replace(/[^\d]/g, ""))}
+                      placeholder="Enter AIR Rank" inputMode="numeric" className={selCls} />
+                    <p className="text-xs text-ink-500 mt-2">Your overall NEET-UG rank as per the official result.</p>
+                  </Field>
+                ) : (
+                  <Field label={`NEET Score (marks out of ${NEET_MAX_MARKS})`}>
+                    <input value={d.score} inputMode="numeric" className={selCls} placeholder="e.g. 620"
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
+                        const marks = raw === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(raw));
+                        const est = marks > 0 ? estimateRankFromScore(marks) : 0;
+                        setD((s) => ({ ...s, score: marks ? String(marks) : "", rank: est ? String(est) : "" }));
+                      }} />
+                    {d.rank && Number(d.score) > 0 ? (
+                      <p className="text-sm mt-2 text-brand-800 bg-brand-50 border border-brand-100 rounded-md px-3 py-2">
+                        ≈ Estimated AIR <b>{Number(d.rank).toLocaleString("en-IN")}</b>
+                        <span className="block text-xs text-ink-500 mt-0.5">Approximate, from typical NEET marks-vs-rank trends. We'll predict colleges using this rank.</span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-ink-500 mt-2">Enter your NEET marks — we'll estimate your All-India Rank, then predict colleges.</p>
+                    )}
+                  </Field>
+                )}
+              </div>
             )}
             {step === 1 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -100,7 +136,7 @@ export default function PredictWizard() {
               <div className="text-sm">
                 <h3 className="font-semibold text-ink-900 mb-3">Review your details</h3>
                 <dl className="grid grid-cols-2 gap-y-2">
-                  {[["AIR Rank", d.rank || "—"], ["Category", d.category], ["Sub Category", d.subCategory || "—"], ["State", d.state || "All India"], ["Quota", d.quota], ["PwD", d.pwd], ["Gender", d.gender]].map(([k, v]) => (
+                  {[...(d.entryMode === "score" && d.score ? [["NEET Score", `${d.score} / ${NEET_MAX_MARKS}`]] : []), [d.entryMode === "score" ? "AIR Rank (est.)" : "AIR Rank", d.rank || "—"], ["Category", d.category], ["Sub Category", d.subCategory || "—"], ["State", d.state || "All India"], ["Quota", d.quota], ["PwD", d.pwd], ["Gender", d.gender]].map(([k, v]) => (
                     <div key={k as string} className="contents"><dt className="text-ink-500">{k}</dt><dd className="text-ink-900 font-medium">{v}</dd></div>
                   ))}
                 </dl>
@@ -115,7 +151,7 @@ export default function PredictWizard() {
           <aside className="bg-surface-muted border border-border rounded-lg p-4 text-sm h-fit">
             <h4 className="font-semibold text-ink-900 mb-3">Your Details</h4>
             <dl className="space-y-2">
-              {[["AIR Rank", d.rank || "Not set"], ["Category", d.category], ["State", d.state || "All India"], ["Quota", d.quota], ["PwD", d.pwd], ["Gender", d.gender]].map(([k, v]) => (
+              {[...(d.entryMode === "score" && d.score ? [["NEET Score", `${d.score} / ${NEET_MAX_MARKS}`]] : []), [d.entryMode === "score" ? "AIR Rank (est.)" : "AIR Rank", d.rank || "Not set"], ["Category", d.category], ["State", d.state || "All India"], ["Quota", d.quota], ["PwD", d.pwd], ["Gender", d.gender]].map(([k, v]) => (
                 <div key={k as string}><dt className="text-ink-500 text-xs">{k}</dt><dd className="text-ink-900 font-medium">{v}</dd></div>
               ))}
             </dl>

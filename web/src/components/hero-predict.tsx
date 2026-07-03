@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { estimateRankFromScore, NEET_MAX_MARKS } from "@/lib/score-to-rank";
 
 const CATS = ["OPEN", "EWS", "OBC", "SC", "ST"];
 const STATES = [
@@ -14,8 +15,17 @@ const STATES = [
 export function HeroPredict() {
   const router = useRouter();
   const [rank, setRank] = useState("");
+  const [score, setScore] = useState("");
+  const [mode, setMode] = useState<"rank" | "score">("rank");
   const [category, setCategory] = useState("OPEN");
   const [state, setState] = useState("");
+
+  function onScore(v: string) {
+    const raw = v.replace(/[^\d]/g, "").slice(0, 3);
+    const marks = raw === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(raw));
+    setScore(marks ? String(marks) : "");
+    setRank(marks > 0 ? String(estimateRankFromScore(marks)) : "");
+  }
 
   function go() {
     const p = new URLSearchParams({ rank, category });
@@ -29,10 +39,31 @@ export function HeroPredict() {
       <div className="text-sm font-semibold text-ink-900 mb-3">Check your chances in 10 seconds</div>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-xs font-medium text-ink-500 mb-1">Your NEET AIR Rank</label>
-          <input value={rank} onChange={(e) => setRank(e.target.value.replace(/[^\d]/g, ""))}
-            placeholder="e.g. 28500" inputMode="numeric"
-            className="w-full h-11 rounded-md border border-border px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-medium text-ink-500">{mode === "rank" ? "Your NEET AIR Rank" : "Your NEET Score"}</label>
+            <div className="inline-flex rounded border border-border overflow-hidden text-[10px] leading-none">
+              {(["rank", "score"] as const).map((m) => (
+                <button key={m} type="button" onClick={() => setMode(m)}
+                  className={`px-1.5 py-1 ${mode === m ? "bg-brand-600 text-white" : "text-ink-500 bg-white"}`}>
+                  {m === "rank" ? "Rank" : "Score"}
+                </button>
+              ))}
+            </div>
+          </div>
+          {mode === "rank" ? (
+            <input value={rank} onChange={(e) => setRank(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="e.g. 28500" inputMode="numeric"
+              className="w-full h-11 rounded-md border border-border px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+          ) : (
+            <>
+              <input value={score} onChange={(e) => onScore(e.target.value)}
+                placeholder={`Marks out of ${NEET_MAX_MARKS}`} inputMode="numeric"
+                className="w-full h-11 rounded-md border border-border px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+              {rank && Number(score) > 0 && (
+                <p className="mt-1 text-[11px] text-brand-700">≈ Estimated AIR {Number(rank).toLocaleString("en-IN")}</p>
+              )}
+            </>
+          )}
         </div>
         <div>
           <label className="block text-xs font-medium text-ink-500 mb-1">Category</label>
