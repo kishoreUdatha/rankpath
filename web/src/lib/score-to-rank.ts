@@ -47,11 +47,13 @@ export const NEET_YEAR_NOTES: Record<number, string> = {
 
 /**
  * Estimated AIR for a NEET score (0..720) in a given exam year.
- * Falls back to the latest year's table when `year` is unknown/unsupported.
+ * Returns 0 (no estimate) if `year` is missing or unsupported — the exam year is
+ * REQUIRED, since the marks↔rank curve differs too much between years to guess one.
  */
-export function estimateRankFromScore(marks: number, year?: number): number {
+export function estimateRankFromScore(marks: number, year: number): number {
   if (!Number.isFinite(marks)) return 0;
-  const table = TABLES[year ?? LATEST_NEET_YEAR] ?? TABLES[LATEST_NEET_YEAR];
+  const table = TABLES[year];
+  if (!table) return 0;
   const m = Math.max(0, Math.min(NEET_MAX_MARKS, Math.round(marks)));
   if (m >= table[0][0]) return table[0][1];                       // at/above topper score
   const last = table[table.length - 1];

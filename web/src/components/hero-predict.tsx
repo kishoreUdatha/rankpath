@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS, LATEST_NEET_YEAR } from "@/lib/score-to-rank";
+import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS } from "@/lib/score-to-rank";
 
 const CATS = ["OPEN", "EWS", "OBC", "SC", "ST"];
 const STATES = [
@@ -16,16 +16,16 @@ export function HeroPredict() {
   const router = useRouter();
   const [rank, setRank] = useState("");
   const [score, setScore] = useState("");
-  const [scoreYear, setScoreYear] = useState(LATEST_NEET_YEAR);
+  const [scoreYear, setScoreYear] = useState<number | "">("");
   const [mode, setMode] = useState<"rank" | "score">("rank");
   const [category, setCategory] = useState("OPEN");
   const [state, setState] = useState("");
 
-  function onScore(v: string, year = scoreYear) {
+  function onScore(v: string, year: number | "" = scoreYear) {
     const raw = v.replace(/[^\d]/g, "").slice(0, 3);
     const marks = raw === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(raw));
     setScore(marks ? String(marks) : "");
-    setRank(marks > 0 ? String(estimateRankFromScore(marks, year)) : "");
+    setRank(marks > 0 && year ? String(estimateRankFromScore(marks, year)) : "");
   }
 
   function go() {
@@ -61,15 +61,18 @@ export function HeroPredict() {
                 <input value={score} onChange={(e) => onScore(e.target.value)}
                   placeholder={`Marks out of ${NEET_MAX_MARKS}`} inputMode="numeric"
                   className="flex-1 h-11 rounded-md border border-border px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
-                <select value={scoreYear} title="Exam year"
-                  onChange={(e) => { const y = Number(e.target.value); setScoreYear(y); onScore(score, y); }}
-                  className="h-11 rounded-md border border-border px-2 text-sm bg-white">
+                <select value={scoreYear} title="Exam year (required)"
+                  onChange={(e) => { const y = e.target.value ? Number(e.target.value) : ""; setScoreYear(y); onScore(score, y); }}
+                  className={`h-11 rounded-md border px-2 text-sm bg-white ${!scoreYear && Number(score) > 0 ? "border-amber-400 text-ink-400" : "border-border"}`}>
+                  <option value="">Year</option>
                   {NEET_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
-              {rank && Number(score) > 0 && (
+              {Number(score) > 0 && !scoreYear ? (
+                <p className="mt-1 text-[11px] text-amber-700">Pick your exam year — rank differs a lot by year.</p>
+              ) : rank && Number(score) > 0 ? (
                 <p className="mt-1 text-[11px] text-brand-700">≈ Estimated AIR {Number(rank).toLocaleString("en-IN")} · NEET {scoreYear}</p>
-              )}
+              ) : null}
             </>
           )}
         </div>

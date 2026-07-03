@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STATES as ALL_STATES, STATE_CODES } from "@/lib/states";
-import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS, LATEST_NEET_YEAR, NEET_YEAR_NOTES } from "@/lib/score-to-rank";
+import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS, NEET_YEAR_NOTES } from "@/lib/score-to-rank";
 
 const STEPS = ["Rank / Score", "Category & Quota", "Preferences", "Review", "Results"];
 const CATS = ["OPEN", "EWS", "OBC", "SC", "ST", "BC-A", "BC-B", "BC-C", "BC-D", "BC-E"];
@@ -31,12 +31,13 @@ const selCls = "w-full h-10 rounded-md border border-border px-3 text-sm bg-whit
 export default function PredictWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [d, setD] = useState({ rank: "", score: "", scoreYear: String(LATEST_NEET_YEAR), entryMode: "rank", category: "OPEN", subCategory: "", state: "", quota: "AIQ", pwd: "No", gender: "Any" });
+  const [d, setD] = useState({ rank: "", score: "", scoreYear: "", entryMode: "rank", category: "OPEN", subCategory: "", state: "", quota: "AIQ", pwd: "No", gender: "Any" });
   const set = (k: string, v: string) => setD((s) => ({ ...s, [k]: v }));
   // Recompute the estimated AIR from the current score + selected exam year.
+  // No estimate until BOTH a score and a valid exam year are provided.
   const setScoreRank = (rawScore: string, yearStr: string) => {
     const marks = rawScore === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(rawScore));
-    const est = marks > 0 ? estimateRankFromScore(marks, Number(yearStr)) : 0;
+    const est = marks > 0 && yearStr ? estimateRankFromScore(marks, Number(yearStr)) : 0;
     setD((s) => ({ ...s, score: marks ? String(marks) : "", scoreYear: yearStr, rank: est ? String(est) : "" }));
   };
   const [prefilled, setPrefilled] = useState(false);
@@ -45,15 +46,16 @@ export default function PredictWizard() {
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then(({ user }) => {
       if (!user) return;
-      // If the student saved a score but no rank, open in score mode with an estimate.
+      // If the student saved a score but no rank, open in score mode. Only pre-select
+      // the exam year from their own profile — never silently default to a year.
       const scoreOnly = !user.neetRank && user.neetScore;
-      const yr = NEET_YEARS.includes(Number(user.neetYear)) ? Number(user.neetYear) : LATEST_NEET_YEAR;
-      const est = scoreOnly ? estimateRankFromScore(Number(user.neetScore), yr) : 0;
+      const yr = NEET_YEARS.includes(Number(user.neetYear)) ? Number(user.neetYear) : 0;
+      const est = scoreOnly && yr ? estimateRankFromScore(Number(user.neetScore), yr) : 0;
       setD((s) => ({
         ...s,
         entryMode: scoreOnly ? "score" : s.entryMode,
         score: scoreOnly ? String(user.neetScore) : s.score,
-        scoreYear: String(yr),
+        scoreYear: yr ? String(yr) : s.scoreYear,
         rank: s.rank || (user.neetRank ? String(user.neetRank) : (est ? String(est) : "")),
         category: CATS.includes(user.category) ? user.category : s.category,
         state: user.domicileState && STATE_CODES.has(user.domicileState) ? user.domicileState : s.state,
@@ -111,13 +113,18 @@ export default function PredictWizard() {
                           onChange={(e) => setScoreRank(e.target.value.replace(/[^\d]/g, "").slice(0, 3), d.scoreYear)} />
                       </Field>
                     </div>
-                    <Field label="Exam year">
-                      <select className={selCls} value={d.scoreYear} onChange={(e) => setScoreRank(d.score, e.target.value)}>
+                    <Field label="Exam year (required)">
+                      <select className={`${selCls} ${!d.scoreYear ? "text-ink-400" : ""}`} value={d.scoreYear} onChange={(e) => setScoreRank(d.score, e.target.value)}>
+                        <option value="">Select year</option>
                         {NEET_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </Field>
                     <div className="sm:col-span-3">
-                      {d.rank && Number(d.score) > 0 ? (
+                      {Number(d.score) > 0 && !d.scoreYear ? (
+                        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                          Select your <b>exam year</b> above — the same score maps to a very different rank each year, so we won't guess it.
+                        </p>
+                      ) : d.rank && Number(d.score) > 0 ? (
                         <p className="text-sm text-brand-800 bg-brand-50 border border-brand-100 rounded-md px-3 py-2">
                           ≈ Estimated AIR <b>{Number(d.rank).toLocaleString("en-IN")}</b>
                           <span className="block text-xs text-ink-500 mt-0.5">

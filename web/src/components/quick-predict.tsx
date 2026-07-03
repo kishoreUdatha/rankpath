@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STATES as ALL_STATES, STATE_CODES } from "@/lib/states";
-import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS, LATEST_NEET_YEAR } from "@/lib/score-to-rank";
+import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS } from "@/lib/score-to-rank";
 
 const CATS = ["OPEN", "EWS", "OBC", "SC", "ST", "BC-A", "BC-B", "BC-C", "BC-D", "BC-E"];
 const STATES = [{ code: "", name: "All India (AIQ)" }, ...ALL_STATES];
@@ -11,22 +11,22 @@ export function QuickPredict() {
   const router = useRouter();
   const [rank, setRank] = useState("");
   const [score, setScore] = useState("");
-  const [scoreYear, setScoreYear] = useState(LATEST_NEET_YEAR);
+  const [scoreYear, setScoreYear] = useState<number | "">("");
   const [mode, setMode] = useState<"rank" | "score">("rank");
   const [category, setCategory] = useState("OPEN");
   const [state, setState] = useState("");
 
-  // Pre-fill from the logged-in student's profile.
+  // Pre-fill from the logged-in student's profile. Only pre-select the exam year
+  // from the profile — never silently default to a year.
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then(({ user }) => {
       if (!user) return;
-      const yr = NEET_YEARS.includes(Number(user.neetYear)) ? Number(user.neetYear) : LATEST_NEET_YEAR;
+      const yr = NEET_YEARS.includes(Number(user.neetYear)) ? Number(user.neetYear) : "";
       setScoreYear(yr);
       if (!user.neetRank && user.neetScore) {
-        // Saved a score but no rank → open in score mode with a year-accurate estimate.
         setMode("score");
         setScore((v) => v || String(user.neetScore));
-        setRank((v) => v || String(estimateRankFromScore(Number(user.neetScore), yr)));
+        if (yr) setRank((v) => v || String(estimateRankFromScore(Number(user.neetScore), yr)));
       } else if (user.neetRank) {
         setRank((v) => v || String(user.neetRank));
       }
@@ -35,11 +35,11 @@ export function QuickPredict() {
     }).catch(() => {});
   }, []);
 
-  function onScore(v: string) {
+  function onScore(v: string, year: number | "" = scoreYear) {
     const raw = v.replace(/[^\d]/g, "").slice(0, 3);
     const marks = raw === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(raw));
     setScore(marks ? String(marks) : "");
-    setRank(marks > 0 ? String(estimateRankFromScore(marks, scoreYear)) : "");
+    setRank(marks > 0 && year ? String(estimateRankFromScore(marks, year)) : "");
   }
 
   function go() {
@@ -68,12 +68,22 @@ export function QuickPredict() {
             className="w-full h-10 rounded-md border border-border px-3 text-sm focus:ring-2 focus:ring-ring outline-none" />
         ) : (
           <>
-            <input value={score} onChange={(e) => onScore(e.target.value)}
-              placeholder={`Marks / ${NEET_MAX_MARKS}`} inputMode="numeric"
-              className="w-full h-10 rounded-md border border-border px-3 text-sm focus:ring-2 focus:ring-ring outline-none" />
-            {rank && Number(score) > 0 && (
+            <div className="flex gap-2">
+              <input value={score} onChange={(e) => onScore(e.target.value)}
+                placeholder={`Marks / ${NEET_MAX_MARKS}`} inputMode="numeric"
+                className="flex-1 min-w-0 h-10 rounded-md border border-border px-3 text-sm focus:ring-2 focus:ring-ring outline-none" />
+              <select value={scoreYear} title="Exam year (required)"
+                onChange={(e) => { const y = e.target.value ? Number(e.target.value) : ""; setScoreYear(y); onScore(score, y); }}
+                className={`h-10 rounded-md border px-1.5 text-sm bg-white ${!scoreYear && Number(score) > 0 ? "border-amber-400 text-ink-400" : "border-border"}`}>
+                <option value="">Yr</option>
+                {NEET_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            {Number(score) > 0 && !scoreYear ? (
+              <span className="absolute left-0 top-full mt-1 text-[11px] text-amber-700">Pick exam year</span>
+            ) : rank && Number(score) > 0 ? (
               <span className="absolute left-0 top-full mt-1 text-[11px] text-brand-700">≈ Est. AIR {Number(rank).toLocaleString("en-IN")} · NEET {scoreYear}</span>
-            )}
+            ) : null}
           </>
         )}
       </div>
