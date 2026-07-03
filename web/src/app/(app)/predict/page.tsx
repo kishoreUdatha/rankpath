@@ -106,33 +106,22 @@ export default function PredictWizard() {
                     <p className="text-xs text-ink-500 mt-2">Most accurate — use the exact AIR from your NEET scorecard.</p>
                   </Field>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="sm:col-span-2">
-                      <Field label={`NEET Score (marks out of ${NEET_MAX_MARKS})`}>
-                        <input value={d.score} inputMode="numeric" className={selCls} placeholder="e.g. 620"
-                          onChange={(e) => setScoreRank(e.target.value.replace(/[^\d]/g, "").slice(0, 3), d.scoreYear)} />
-                      </Field>
-                    </div>
-                    <Field label="Exam year">
-                      <select className={selCls} value={d.scoreYear} onChange={(e) => setScoreRank(d.score, e.target.value)}>
-                        {NEET_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
-                      </select>
-                    </Field>
-                    <div className="sm:col-span-3">
-                      {d.rank && Number(d.score) > 0 ? (
-                        <p className="text-sm text-brand-800 bg-brand-50 border border-brand-100 rounded-md px-3 py-2">
-                          ≈ Estimated AIR <b>{Number(d.rank).toLocaleString("en-IN")}</b>
-                          <span className="block text-xs text-ink-500 mt-0.5">
-                            Approximate, from official NEET {d.scoreYear} marks-vs-rank.
-                            {NEET_YEAR_NOTES[Number(d.scoreYear)] ? ` ${NEET_YEAR_NOTES[Number(d.scoreYear)]}` : ""}
-                            {" "}If you know your exact rank, use “I know my AIR Rank” for the best result.
-                          </span>
-                        </p>
-                      ) : (
-                        <p className="text-xs text-ink-500">Enter your NEET marks and exam year — we'll estimate your All-India Rank, then predict colleges.</p>
-                      )}
-                    </div>
-                  </div>
+                  <Field label={`NEET Score (marks out of ${NEET_MAX_MARKS})`}>
+                    <input value={d.score} inputMode="numeric" className={selCls} placeholder="e.g. 620"
+                      onChange={(e) => setScoreRank(e.target.value.replace(/[^\d]/g, "").slice(0, 3), d.scoreYear)} />
+                    {d.rank && Number(d.score) > 0 ? (
+                      <p className="text-sm text-brand-800 bg-brand-50 border border-brand-100 rounded-md px-3 py-2 mt-2">
+                        ≈ Estimated AIR <b>{Number(d.rank).toLocaleString("en-IN")}</b>
+                        <span className="block text-xs text-ink-500 mt-0.5">
+                          Approximate, from official NEET {d.scoreYear} marks-vs-rank.
+                          {NEET_YEAR_NOTES[Number(d.scoreYear)] ? ` ${NEET_YEAR_NOTES[Number(d.scoreYear)]}` : ""}
+                          {" "}If you know your exact rank, use “I know my AIR Rank” for the best result.
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-ink-500 mt-2">Enter your NEET marks — we'll estimate your All-India Rank, then predict colleges.</p>
+                    )}
+                  </Field>
                 )}
               </div>
             )}

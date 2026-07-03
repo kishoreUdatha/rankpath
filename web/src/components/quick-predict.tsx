@@ -68,16 +68,9 @@ export function QuickPredict() {
             className="w-full h-10 rounded-md border border-border px-3 text-sm focus:ring-2 focus:ring-ring outline-none" />
         ) : (
           <>
-            <div className="flex gap-2">
-              <input value={score} onChange={(e) => onScore(e.target.value)}
-                placeholder={`Marks / ${NEET_MAX_MARKS}`} inputMode="numeric"
-                className="flex-1 min-w-0 h-10 rounded-md border border-border px-3 text-sm focus:ring-2 focus:ring-ring outline-none" />
-              <select value={scoreYear} title="Exam year"
-                onChange={(e) => { const y = Number(e.target.value); setScoreYear(y); onScore(score, y); }}
-                className="h-10 rounded-md border border-border px-1.5 text-sm bg-white">
-                {NEET_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
+            <input value={score} onChange={(e) => onScore(e.target.value)}
+              placeholder={`Marks / ${NEET_MAX_MARKS}`} inputMode="numeric"
+              className="w-full h-10 rounded-md border border-border px-3 text-sm focus:ring-2 focus:ring-ring outline-none" />
             {rank && Number(score) > 0 && (
               <span className="absolute left-0 top-full mt-1 text-[11px] text-brand-700">≈ Est. AIR {Number(rank).toLocaleString("en-IN")} · NEET {scoreYear}</span>
             )}
