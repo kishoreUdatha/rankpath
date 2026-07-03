@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STATES as ALL_STATES, STATE_CODES } from "@/lib/states";
-import { estimateRankFromScore, NEET_MAX_MARKS } from "@/lib/score-to-rank";
+import { estimateRankFromScore, NEET_MAX_MARKS, NEET_YEARS, LATEST_NEET_YEAR, NEET_YEAR_NOTES } from "@/lib/score-to-rank";
 
 const STEPS = ["Rank / Score", "Category & Quota", "Preferences", "Review", "Results"];
 const CATS = ["OPEN", "EWS", "OBC", "SC", "ST", "BC-A", "BC-B", "BC-C", "BC-D", "BC-E"];
@@ -31,8 +31,14 @@ const selCls = "w-full h-10 rounded-md border border-border px-3 text-sm bg-whit
 export default function PredictWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [d, setD] = useState({ rank: "", score: "", entryMode: "rank", category: "OPEN", subCategory: "", state: "", quota: "AIQ", pwd: "No", gender: "Any" });
+  const [d, setD] = useState({ rank: "", score: "", scoreYear: String(LATEST_NEET_YEAR), entryMode: "rank", category: "OPEN", subCategory: "", state: "", quota: "AIQ", pwd: "No", gender: "Any" });
   const set = (k: string, v: string) => setD((s) => ({ ...s, [k]: v }));
+  // Recompute the estimated AIR from the current score + selected exam year.
+  const setScoreRank = (rawScore: string, yearStr: string) => {
+    const marks = rawScore === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(rawScore));
+    const est = marks > 0 ? estimateRankFromScore(marks, Number(yearStr)) : 0;
+    setD((s) => ({ ...s, score: marks ? String(marks) : "", scoreYear: yearStr, rank: est ? String(est) : "" }));
+  };
   const [prefilled, setPrefilled] = useState(false);
 
   // Pre-fill from the student's saved profile (rank, category, domicile, gender).
@@ -41,11 +47,13 @@ export default function PredictWizard() {
       if (!user) return;
       // If the student saved a score but no rank, open in score mode with an estimate.
       const scoreOnly = !user.neetRank && user.neetScore;
-      const est = scoreOnly ? estimateRankFromScore(Number(user.neetScore)) : 0;
+      const yr = NEET_YEARS.includes(Number(user.neetYear)) ? Number(user.neetYear) : LATEST_NEET_YEAR;
+      const est = scoreOnly ? estimateRankFromScore(Number(user.neetScore), yr) : 0;
       setD((s) => ({
         ...s,
         entryMode: scoreOnly ? "score" : s.entryMode,
         score: scoreOnly ? String(user.neetScore) : s.score,
+        scoreYear: String(yr),
         rank: s.rank || (user.neetRank ? String(user.neetRank) : (est ? String(est) : "")),
         category: CATS.includes(user.category) ? user.category : s.category,
         state: user.domicileState && STATE_CODES.has(user.domicileState) ? user.domicileState : s.state,
@@ -93,26 +101,36 @@ export default function PredictWizard() {
                   <Field label="AIR Rank (NEET All-India Rank)">
                     <input value={d.rank} onChange={(e) => set("rank", e.target.value.replace(/[^\d]/g, ""))}
                       placeholder="Enter AIR Rank" inputMode="numeric" className={selCls} />
-                    <p className="text-xs text-ink-500 mt-2">Your overall NEET-UG rank as per the official result.</p>
+                    <p className="text-xs text-ink-500 mt-2">Most accurate — use the exact AIR from your NEET scorecard.</p>
                   </Field>
                 ) : (
-                  <Field label={`NEET Score (marks out of ${NEET_MAX_MARKS})`}>
-                    <input value={d.score} inputMode="numeric" className={selCls} placeholder="e.g. 620"
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
-                        const marks = raw === "" ? 0 : Math.min(NEET_MAX_MARKS, Number(raw));
-                        const est = marks > 0 ? estimateRankFromScore(marks) : 0;
-                        setD((s) => ({ ...s, score: marks ? String(marks) : "", rank: est ? String(est) : "" }));
-                      }} />
-                    {d.rank && Number(d.score) > 0 ? (
-                      <p className="text-sm mt-2 text-brand-800 bg-brand-50 border border-brand-100 rounded-md px-3 py-2">
-                        ≈ Estimated AIR <b>{Number(d.rank).toLocaleString("en-IN")}</b>
-                        <span className="block text-xs text-ink-500 mt-0.5">Approximate, from typical NEET marks-vs-rank trends. We'll predict colleges using this rank.</span>
-                      </p>
-                    ) : (
-                      <p className="text-xs text-ink-500 mt-2">Enter your NEET marks — we'll estimate your All-India Rank, then predict colleges.</p>
-                    )}
-                  </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-2">
+                      <Field label={`NEET Score (marks out of ${NEET_MAX_MARKS})`}>
+                        <input value={d.score} inputMode="numeric" className={selCls} placeholder="e.g. 620"
+                          onChange={(e) => setScoreRank(e.target.value.replace(/[^\d]/g, "").slice(0, 3), d.scoreYear)} />
+                      </Field>
+                    </div>
+                    <Field label="Exam year">
+                      <select className={selCls} value={d.scoreYear} onChange={(e) => setScoreRank(d.score, e.target.value)}>
+                        {NEET_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </Field>
+                    <div className="sm:col-span-3">
+                      {d.rank && Number(d.score) > 0 ? (
+                        <p className="text-sm text-brand-800 bg-brand-50 border border-brand-100 rounded-md px-3 py-2">
+                          ≈ Estimated AIR <b>{Number(d.rank).toLocaleString("en-IN")}</b>
+                          <span className="block text-xs text-ink-500 mt-0.5">
+                            Approximate, from official NEET {d.scoreYear} marks-vs-rank.
+                            {NEET_YEAR_NOTES[Number(d.scoreYear)] ? ` ${NEET_YEAR_NOTES[Number(d.scoreYear)]}` : ""}
+                            {" "}If you know your exact rank, use “I know my AIR Rank” for the best result.
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-ink-500">Enter your NEET marks and exam year — we'll estimate your All-India Rank, then predict colleges.</p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
